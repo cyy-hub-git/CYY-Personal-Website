@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌸 快消每日新闻</title>
+<style>
+  :root {
+    --bg: #fff7fb;
+    --card: #ffffff;
+    --line: #f5dceb;
+    --ink: #43233a;
+    --muted: #a1849b;
+    --pink-100: #fce7f3;
+    --pink-200: #fbcfe8;
+    --pink-300: #f9a8d4;
+    --pink-500: #ec4899;
+    --pink-600: #db2777;
+    --pink-700: #be185d;
+    --pink-800: #9d174d;
+    --shadow: 0 1px 3px rgba(190,24,93,.06), 0 6px 20px rgba(190,24,93,.07);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+    background: var(--bg); color: var(--ink); min-height: 100vh; display: flex;
+  }
+
+  /* ============ 左侧目录 ============ */
+  .sidebar {
+    width: 224px; flex-shrink: 0; background: #fff;
+    border-right: 1px solid var(--line);
+    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    padding: 20px 12px 24px; display: flex; flex-direction: column; gap: 4px;
+  }
+  .logo { font-size: 19px; font-weight: 700; color: var(--pink-700); padding: 2px 8px 0; letter-spacing: .5px; }
+  .logo small { display: block; font-size: 11px; font-weight: 400; color: var(--muted); margin-top: 3px; letter-spacing: 0; }
+  .nav-sep { font-size: 11px; color: var(--muted); padding: 14px 10px 5px; letter-spacing: 2px; }
+  .nav-btn {
+    display: flex; align-items: center; gap: 8px; width: 100%;
+    padding: 8px 10px; border: none; background: transparent; border-radius: 10px;
+    font-size: 13.5px; color: var(--ink); cursor: pointer; text-align: left;
+    transition: all .15s ease;
+  }
+  .nav-btn:hover { background: var(--pink-100); color: var(--pink-700); }
+  .nav-btn.active { background: linear-gradient(135deg, var(--pink-500), var(--pink-600)); color: #fff; box-shadow: 0 4px 12px rgba(219,39,119,.35); }
+  .nav-btn .cnt { margin-left: auto; font-size: 11.5px; opacity: .7; }
+  .side-foot { margin-top: auto; padding: 10px; font-size: 11px; color: var(--muted); line-height: 1.7; }
+  .side-foot b { color: var(--pink-600); }
+
+  /* ============ 主区 ============ */
+  .main { flex: 1; min-width: 0; padding: 22px 30px 90px; max-width: 1080px; }
+  .main-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
+  .main-head h2 { font-size: 21px; color: var(--pink-800); }
+  .date-chip {
+    font-size: 12px; color: var(--muted); background: #fff; border: 1px solid var(--line);
+    padding: 4px 12px; border-radius: 999px;
+  }
+  .unread-chip { font-size: 12px; color: #fff; background: var(--pink-500); padding: 4px 12px; border-radius: 999px; }
+  .search {
+    margin-left: auto; min-width: 220px; padding: 8px 14px;
+    border: 1px solid var(--line); border-radius: 999px; font-size: 13.5px;
+    outline: none; background: #fff; color: var(--ink);
+  }
+  .search:focus { border-color: var(--pink-500); box-shadow: 0 0 0 3px rgba(236,72,153,.12); }
+
+  .btn {
+    padding: 8px 14px; border: 1px solid var(--line); border-radius: 10px;
+    background: #fff; color: var(--ink); font-size: 13px; cursor: pointer;
+    transition: all .15s ease;
+  }
+  .btn:hover { border-color: var(--pink-500); color: var(--pink-600); }
+  .btn.pink { background: linear-gradient(135deg, var(--pink-500), var(--pink-600)); border: none; color: #fff; }
+  .btn.pink:hover { filter: brightness(1.05); color: #fff; }
+  .btn.ghost { border-style: dashed; }
+  .btn.danger:hover { border-color: #e11d48; color: #e11d48; }
+
+  /* 今日速览 */
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 22px; }
+  .sum-card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 14px; cursor: pointer; box-shadow: var(--shadow);
+    transition: transform .15s ease, border-color .15s ease;
+  }
+  .sum-card:hover { transform: translateY(-2px); border-color: var(--pink-300); }
+  .sum-card .num { font-size: 26px; font-weight: 700; color: var(--pink-600); }
+  .sum-card .nm { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .sum-card .nm span { margin-right: 5px; }
+
+  .section-title { font-size: 15px; font-weight: 600; color: var(--pink-800); margin: 20px 0 12px; display: flex; align-items: center; gap: 8px; }
+  .section-title::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+  /* 新闻卡片 */
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    box-shadow: var(--shadow); padding: 14px 16px; margin-bottom: 12px;
+    transition: box-shadow .15s ease;
+  }
+  .card:hover { box-shadow: 0 4px 14px rgba(190,24,93,.12); }
+  .card.read { opacity: .6; }
+  .card.starred { border-color: var(--pink-400, #f472b6); }
+  .card-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .badge { padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .card-meta { font-size: 12px; color: var(--muted); }
+  .card-title { font-size: 15.5px; margin-top: 8px; line-height: 1.55; }
+  .card-title a { color: var(--ink); text-decoration: none; }
+  .card-title a:hover { color: var(--pink-600); text-decoration: underline; }
+  .star-flag { color: #f472b6; margin-right: 6px; }
+  .card-summary { font-size: 13px; color: var(--muted); margin-top: 6px; line-height: 1.6; white-space: pre-wrap; }
+  .card-actions { display: flex; gap: 6px; margin-top: 12px; }
+  .mini {
+    padding: 4px 10px; border: 1px solid var(--line); border-radius: 8px;
+    background: transparent; font-size: 12px; color: var(--muted); cursor: pointer; transition: all .15s ease;
+  }
+  .mini:hover { border-color: var(--pink-500); color: var(--pink-600); }
+  .mini.on { color: var(--pink-600); border-color: var(--pink-300); background: var(--pink-100); }
+  .mini.del:hover { border-color: #e11d48; color: #e11d48; }
+
+  .group-title { font-size: 13.5px; font-weight: 600; color: var(--pink-700); margin: 18px 0 10px; display: flex; align-items: center; gap: 8px; }
+  .group-title::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+  /* 周总结 */
+  .week-stats { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .w-chip { background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-size: 13px; }
+  .w-chip b { color: var(--pink-600); }
+  .digest-box {
+    background: #fff; border: 1px solid var(--line); border-radius: 14px;
+    padding: 16px; font-size: 13px; line-height: 1.8; color: var(--ink);
+    white-space: pre-wrap; max-height: 420px; overflow-y: auto; box-shadow: var(--shadow);
+  }
+  .tool-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 4px; }
+
+  /* 添加面板 */
+  #addPanel { background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 16px; margin-bottom: 20px; }
+  #addPanel h3 { font-size: 15px; color: var(--pink-800); margin-bottom: 12px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-grid .full { grid-column: 1 / -1; }
+  label { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; color: var(--muted); }
+  input, select, textarea {
+    padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px;
+    font-size: 13.5px; font-family: inherit; color: var(--ink); outline: none; background: #fff;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--pink-500); box-shadow: 0 0 0 3px rgba(236,72,153,.12); }
+  textarea { resize: vertical; }
+  .extract-row { display: flex; gap: 8px; align-items: center; }
+  .extract-row input { flex: 1; }
+  .form-actions { display: flex; gap: 8px; margin-top: 14px; }
+
+  .empty {
+    text-align: center; padding: 60px 20px; color: var(--muted);
+    background: var(--card); border: 1px dashed var(--pink-300);
+    border-radius: 14px; margin-top: 14px;
+  }
+  .empty .icon { font-size: 44px; margin-bottom: 12px; }
+  .empty p { font-size: 13.5px; margin-bottom: 14px; }
+
+  .hint { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.7; }
+
+  /* toast */
+  #toast {
+    position: fixed; left: 50%; bottom: 34px; transform: translateX(-50%) translateY(20px);
+    background: var(--pink-700); color: #fff; padding: 10px 20px; border-radius: 999px;
+    font-size: 13px; box-shadow: 0 8px 24px rgba(157,23,77,.35);
+    opacity: 0; pointer-events: none; transition: all .25s ease; z-index: 99; max-width: 86vw;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 860px) {
+    body { flex-direction: column; }
+    .sidebar { width: 100%; height: auto; position: static; flex-direction: row; flex-wrap: wrap; align-items: center; border-right: none; border-bottom: 1px solid var(--line); padding: 10px 12px; }
+    .logo small { display: none; }
+    .nav-sep { display: none; }
+    .nav-btn { width: auto; }
+    .side-foot { display: none; }
+    .main { padding: 16px 14px 70px; }
+    .search { margin-left: 0; width: 100%; min-width: 0; }
+    .form-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ 左侧目录 ============ -->
+<aside class="sidebar">
+  <div class="logo">🌸 快消每日新闻<small>品牌 · 潮流 · 快消行业</small></div>
+  <div class="nav-sep">视 图</div>
+  <button class="nav-btn active" data-view="today">📌 今日速览</button>
+  <button class="nav-btn" data-view="weekly">📊 周总结</button>
+  <div class="nav-sep">分 类 索 引</div>
+  <button class="nav-btn" data-cat="all">🗂️ 全部新闻<span class="cnt" id="cnt-all"></span></button>
+  <div id="catNav"></div>
+  <div class="nav-sep">工 具</div>
+  <button class="nav-btn" data-act="add">＋ 添加新闻</button>
+  <button class="nav-btn" data-act="fetch">🔄 自动抓取</button>
+  <button class="nav-btn" data-act="extract">🔗 提取正文</button>
+  <button class="nav-btn" data-act="import">⬆ 导入数据</button>
+  <button class="nav-btn" data-act="export">⬇ 导出备份</button>
+  <button class="nav-btn" data-act="clear">🗑 清空数据</button>
+  <div class="side-foot">未读 <b id="footUnread">0</b> 条<br>数据保存在浏览器本地<br>每日自动推送 → 见推送脚本</div>
+  <input type="file" id="fileImport" accept=".json,application/json" hidden>
+</aside>
+
+<!-- ============ 主区 ============ -->
+<main class="main">
+  <div class="main-head">
+    <h2 id="pageTitle">今日速览</h2>
+    <span class="date-chip" id="dateChip"></span>
+    <span class="unread-chip" id="unreadChip" hidden></span>
+    <input id="search" class="search" type="search" placeholder="🔍 搜索标题 / 来源 / 摘要…" autocomplete="off">
+  </div>
+
+  <!-- 今日速览 -->
+  <section id="view-today">
+    <div class="section-title">🌸 今日分类速览 <span style="font-weight:400;color:var(--muted)">（点击分类查看新闻）</span></div>
+    <div class="summary-grid" id="sumGrid"></div>
+    <div class="tool-row">
+      <button class="btn pink" id="btnCopyToday">📋 复制今日摘要</button>
+      <button class="btn" id="btnMailToday">📧 发送到邮箱（Outlook）</button>
+      <button class="btn" id="btnFetchHere">🔄 自动抓取最新</button>
+    </div>
+    <div class="section-title">📌 今日要闻</div>
+    <div id="todayList"></div>
+  </section>
+
+  <!-- 周总结 -->
+  <section id="view-weekly" hidden>
+    <div class="section-title">📊 近 7 天新闻统计</div>
+    <div class="week-stats" id="weekStats"></div>
+    <div class="section-title">✍️ 本周总结（可复制 / 发送邮件）</div>
+    <div class="digest-box" id="weekDigest"></div>
+    <div class="tool-row">
+      <button class="btn pink" id="btnCopyWeek">📋 复制周总结</button>
+      <button class="btn" id="btnMailWeek">📧 周总结发邮件</button>
+      <button class="btn" id="btnRegenWeek">🔄 重新生成</button>
+    </div>
+    <div class="section-title">📰 本周精选（每类前 3 条）</div>
+    <div id="weekList"></div>
+  </section>
+
+  <!-- 分类 / 全部新闻列表 -->
+  <section id="view-list" hidden>
+    <div id="newsList"></div>
+    <div class="empty" id="emptyState" hidden>
+      <div class="icon">📭</div>
+      <p id="emptyText">还没有新闻。</p>
+      <button class="btn pink" id="btnSample">📥 载入示例新闻</button>
+    </div>
+  </section>
+
+  <!-- 添加面板 -->
+  <section id="addPanel" hidden>
+    <h3>✍️ 添加一条新闻</h3>
+    <div class="extract-row" style="margin-bottom:14px">
+      <input id="extractUrl" type="url" placeholder="🔗 粘贴新闻网址，自动提取标题和摘要（如 https://…）">
+      <button class="btn pink" id="btnExtract">🔍 提取</button>
+    </div>
+    <form id="addForm">
+      <div class="form-grid">
+        <label>标题 <span style="color:#e11d48">*</span><input id="f-title" required maxlength="200"></label>
+        <label>分类<select id="f-cat"></select></label>
+        <label>来源<input id="f-source" maxlength="60"></label>
+        <label>日期<input id="f-date" type="date"></label>
+        <label class="full">原文链接<input id="f-url" type="url" placeholder="https://…"></label>
+        <label class="full">摘要 / 要点<textarea id="f-summary" rows="2" maxlength="500"></textarea></label>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn pink">💾 保存新闻</button>
+        <button type="button" class="btn" id="btnCancel">取消</button>
+      </div>
+    </form>
+  </section>
+
+  <p class="hint">💡 提示：网页数据保存在浏览器本地。每日自动抓取 + 桌面日报 + Outlook 邮件推送由「每日新闻推送」文件夹中的脚本完成，首次运行请先执行「配置邮箱.ps1」。</p>
+</main>
+
+<div id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ================= 配置 ================= */
+  var STORAGE_KEY = 'daily_news_items_v1';
+  var MAILTO = 'chengyiyang2023@outlook.com';
+
+  var CATEGORIES = [
+    { id: 'brand',    name: '品牌',    icon: '📢', color: '#be185d', bg: '#fdf2f8' },
+    { id: 'trend',    name: '潮流',    icon: '✨', color: '#db2777', bg: '#fce7f3' },
+    { id: 'launch',   name: '新品',    icon: '🆕', color: '#ec4899', bg: '#fdf2f8' },
+    { id: 'retail',   name: '零售',    icon: '🛒', color: '#f472b6', bg: '#fce7f3' },
+    { id: 'tech',     name: '科技',    icon: '💻', color: '#6d28d9', bg: '#f5f3ff' },
+    { id: 'fund',     name: '基金',    icon: '💰', color: '#e11d48', bg: '#fff1f2' },
+    { id: 'gold',     name: '黄金',    icon: '🥇', color: '#d97706', bg: '#fffbeb' },
+    { id: 'politics', name: '时政',    icon: '🏛️', color: '#9d174d', bg: '#fdf2f8' }
+  ];
+
+  /* 自动抓取源：人民网 + 中新网（直连可用） */
+  var FEEDS = [
+    { name: '人民网·时政', url: 'http://www.people.com.cn/rss/politics.xml', hint: 'politics' },
+    { name: '人民网·财经', url: 'http://www.people.com.cn/rss/finance.xml', hint: 'finance' },
+    { name: '人民网·国际', url: 'http://www.people.com.cn/rss/world.xml', hint: 'politics' },
+    { name: '中新网·滚动', url: 'https://www.chinanews.com.cn/rss/scroll-news.xml', hint: 'general' }
+  ];
+  var PROXIES = [
+    function (u) { return u; },
+    function (u) { return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u); },
+    function (u) { return 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u); },
+    function (u) { return 'https://corsproxy.io/?url=' + encodeURIComponent(u); }
+  ];
+
+  /* ================= 状态 ================= */
+  var items = load();
+  var currentView = 'today';     // today | weekly | list
+  var currentCat = 'all';
+  var searchTerm = '';
+
+  /* ================= DOM ================= */
+  var $ = function (id) { return document.getElementById(id); };
+  var el = {
+    catNav: $('catNav'), cntAll: $('cnt-all'), footUnread: $('footUnread'),
+    pageTitle: $('pageTitle'), dateChip: $('dateChip'), unreadChip: $('unreadChip'),
+    search: $('search'),
+    viewToday: $('view-today'), viewWeekly: $('view-weekly'), viewList: $('view-list'),
+    sumGrid: $('sumGrid'), todayList: $('todayList'),
+    weekStats: $('weekStats'), weekDigest: $('weekDigest'), weekList: $('weekList'),
+    newsList: $('newsList'), empty: $('emptyState'), emptyText: $('emptyText'),
+    addPanel: $('addPanel'), addForm: $('addForm'),
+    fTitle: $('f-title'), fCat: $('f-cat'), fSource: $('f-source'),
+    fUrl: $('f-url'), fSummary: $('f-summary'), fDate: $('f-date'),
+    extractUrl: $('extractUrl'), fileImport: $('fileImport')
+  };
+
+  /* ================= 工具 ================= */
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function todayStr() { var d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function toStr(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function parseDate(s) { return new Date(s + 'T00:00:00'); }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  function catById(id) {
+    for (var i = 0; i < CATEGORIES.length; i++) if (CATEGORIES[i].id === id) return CATEGORIES[i];
+    return { id: 'politics', name: '时政', icon: '🏛️', color: '#9d174d', bg: '#fdf2f8' };
+  }
+  function genId() { return 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+  function load() {
+    try { var raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : []; }
+    catch (e) { return []; }
+  }
+  function save() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); } catch (e) { toast('保存失败：浏览器存储不可用'); } }
+
+  function toast(msg, ms) {
+    var t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(t._tm); t._tm = setTimeout(function () { t.classList.remove('show'); }, ms || 2600);
+  }
+
+  function copyText(text, okMsg) {
+    function done() { toast(okMsg || '已复制到剪贴板'); }
+    function fallback() {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); done(); } catch (e) { toast('复制失败，请手动复制'); }
+      document.body.removeChild(ta);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, fallback);
+    } else fallback();
+  }
+
+  function sortItems(a, b) {
+    if (!!a.starred !== !!b.starred) return a.starred ? -1 : 1;
+    if ((a.date || '') !== (b.date || '')) return (a.date || '') < (b.date || '') ? 1 : -1;
+    return (b.createdAt || 0) - (a.createdAt || 0);
+  }
+
+  /* ================= 视图 ================= */
+  function switchView(view) {
+    currentView = view;
+    el.viewToday.hidden = view !== 'today';
+    el.viewWeekly.hidden = view !== 'weekly';
+    el.viewList.hidden = view !== 'list';
+    var titles = { today: '今日速览', weekly: '周总结', list: currentCat === 'all' ? '全部新闻' : catById(currentCat).icon + ' ' + catById(currentCat).name };
+    el.pageTitle.textContent = titles[view];
+    var btns = document.querySelectorAll('.nav-btn[data-view]');
+    for (var i = 0; i < btns.length; i++) btns[i].classList.toggle('active', btns[i].dataset.view === view);
+    if (view === 'today') renderToday();
+    else if (view === 'weekly') renderWeekly();
+    else renderList();
+  }
+
+  function renderSidebar() {
+    var html = '';
+    for (var i = 0; i < CATEGORIES.length; i++) {
+      var c = CATEGORIES[i];
+      var n = items.filter(function (it) { return it.category === c.id; }).length;
+      html += '<button class="nav-btn' + (currentCat === c.id && currentView === 'list' ? ' active' : '') + '" data-cat="' + c.id + '">' + c.icon + ' ' + c.name + '<span class="cnt">' + n + '</span></button>';
+    }
+    el.catNav.innerHTML = html;
+    el.cntAll.textContent = items.length;
+    var unread = items.filter(function (it) { return !it.read; }).length;
+    el.footUnread.textContent = unread;
+    if (unread > 0) { el.unreadChip.hidden = false; el.unreadChip.textContent = '未读 ' + unread + ' 条'; }
+    else el.unreadChip.hidden = true;
+  }
+
+  /* ----- 今日速览 ----- */
+  function renderToday() {
+    var t = todayStr();
+    var todayItems = items.filter(function (it) { return (it.date || t) === t; });
+    var html = '';
+    CATEGORIES.forEach(function (c) {
+      var n = todayItems.filter(function (it) { return it.category === c.id; }).length;
+      html += '<div class="sum-card" data-cat="' + c.id + '"><div class="num">' + n + '</div><div class="nm">' + c.icon + ' ' + c.name + '</div></div>';
+    });
+    el.sumGrid.innerHTML = html;
+    el.sumGrid.onclick = function (e) {
+      var card = e.target.closest('.sum-card'); if (!card) return;
+      currentCat = card.dataset.cat; switchView('list');
+    };
+    if (!todayItems.length) {
+      el.todayList.innerHTML = '<div class="empty" style="margin-top:0"><div class="icon">🌤️</div><p>今天还没有记录新闻，点「🔄 自动抓取」或「＋ 添加新闻」。</p></div>';
+    } else {
+      el.todayList.innerHTML = renderCards(todayItems);
+    }
+  }
+
+  /* ----- 周总结 ----- */
+  function weekSince() { var d = new Date(); d.setDate(d.getDate() - 6); return toStr(d); }
+
+  function renderWeekly() {
+    var since = weekSince();
+    var pool = items.filter(function (it) { return (it.date || todayStr()) >= since; }).sort(sortItems);
+    var stats = '';
+    var total = 0;
+    CATEGORIES.forEach(function (c) {
+      var n = pool.filter(function (it) { return it.category === c.id; }).length;
+      total += n;
+      stats += '<span class="w-chip">' + c.icon + ' ' + c.name + ' <b>' + n + '</b></span>';
+    });
+    el.weekStats.innerHTML = '<span class="w-chip">近7天共 <b>' + total + '</b> 条</span>' + stats;
+    el.weekDigest.textContent = buildDigestText(pool, 'week');
+    // 每周精选：每类前3
+    var html = '';
+    CATEGORIES.forEach(function (c) {
+      var list = pool.filter(function (it) { return it.category === c.id; }).slice(0, 3);
+      if (!list.length) return;
+      html += '<div class="group-title">' + c.icon + ' ' + c.name + '（本周 ' + pool.filter(function (it) { return it.category === c.id; }).length + ' 条）</div>' + renderCards(list);
+    });
+    el.weekList.innerHTML = html || '<div class="empty" style="margin-top:0"><div class="icon">🌱</div><p>近 7 天还没有新闻。</p></div>';
+  }
+
+  function buildDigestText(pool, mode) {
+    var lines = [];
+    if (mode === 'week') {
+      lines.push('📊 快消每日新闻 · 周总结（' + weekSince() + ' ~ ' + todayStr() + '）');
+      lines.push('本周共收录 ' + pool.length + ' 条新闻，分类如下：');
+    } else {
+      lines.push('🌸 快消每日新闻 · 今日速递（' + todayStr() + '）');
+      lines.push('今日共收录 ' + pool.length + ' 条新闻：');
+    }
+    lines.push('');
+    CATEGORIES.forEach(function (c) {
+      var list = pool.filter(function (it) { return it.category === c.id; }).sort(sortItems);
+      if (!list.length) return;
+      lines.push(c.icon + ' ' + c.name + '（' + list.length + ' 条）');
+      list.slice(0, mode === 'week' ? 3 : 5).forEach(function (it) {
+        lines.push('  · ' + (it.starred ? '★ ' : '') + it.title + (it.source ? '　—— ' + it.source : '') + (it.url ? '\n    ' + it.url : ''));
+      });
+      lines.push('');
+    });
+    lines.push('—— 由「快消每日新闻」整理，祝你工作顺利 💗');
+    return lines.join('\n');
+  }
+
+  /* ----- 列表视图 ----- */
+  function matches(it) {
+    if (currentCat !== 'all' && it.category !== currentCat) return false;
+    if (!searchTerm) return true;
+    var hay = ((it.title || '') + ' ' + (it.source || '') + ' ' + (it.summary || '') + ' ' + catById(it.category).name).toLowerCase();
+    return hay.indexOf(searchTerm) !== -1;
+  }
+
+  function renderCards(list) {
+    var html = '';
+    list.forEach(function (it) {
+      var c = catById(it.category);
+      var title = it.url
+        ? '<a href="' + esc(it.url) + '" target="_blank" rel="noopener">' + esc(it.title) + '</a>'
+        : esc(it.title);
+      html +=
+        '<article class="card' + (it.read ? ' read' : '') + (it.starred ? ' starred' : '') + '" data-id="' + it.id + '">' +
+          '<div class="card-top">' +
+            '<span class="badge" style="color:' + c.color + ';background:' + c.bg + '">' + c.icon + ' ' + c.name + '</span>' +
+            '<span class="card-meta">' + esc(it.source || '未标注来源') + ' · ' + esc(it.date || '') + '</span>' +
+          '</div>' +
+          '<h3 class="card-title">' + (it.starred ? '<span class="star-flag">★</span>' : '') + title + '</h3>' +
+          (it.summary ? '<p class="card-summary">' + esc(it.summary) + '</p>' : '') +
+          '<div class="card-actions">' +
+            '<button class="mini' + (it.starred ? ' on' : '') + '" data-act="star">' + (it.starred ? '★ 已收藏' : '☆ 收藏') + '</button>' +
+            '<button class="mini' + (it.read ? ' on' : '') + '" data-act="read">' + (it.read ? '✓ 已读' : '○ 未读') + '</button>' +
+            '<button class="mini del" data-act="del">✕ 删除</button>' +
+          '</div>' +
+        '</article>';
+    });
+    return html;
+  }
+
+  function renderList() {
+    var filtered = items.filter(matches).sort(sortItems);
+    if (!items.length) {
+      el.newsList.innerHTML = '';
+      el.empty.hidden = false;
+      el.emptyText.innerHTML = '还没有新闻。点击左侧「＋ 添加新闻」手动记录，或「🔄 自动抓取」，也可以载入示例看看效果。';
+      return;
+    }
+    if (!filtered.length) {
+      el.newsList.innerHTML = '';
+      el.empty.hidden = false;
+      el.emptyText.textContent = '没有符合当前分类 / 搜索条件的新闻。';
+      return;
+    }
+    el.empty.hidden = true;
+    // 按日期分组
+    var groups = [], map = {};
+    filtered.forEach(function (it) {
+      var d = it.date || todayStr();
+      if (!map[d]) { map[d] = []; groups.push(d); }
+      map[d].push(it);
+    });
+    var html = '';
+    groups.forEach(function (d) {
+      var label = d === todayStr() ? '📅 今天' : (d === toStr(new Date(Date.now() - 864e5)) ? '📅 昨天' : '📅 ' + d);
+      html += '<div class="group-title">' + label + '（' + map[d].length + ' 条）</div>' + renderCards(map[d]);
+    });
+    el.newsList.innerHTML = html;
+  }
+
+  function render() {
+    renderSidebar();
+    switchView(currentView);
+  }
+
+  /* ================= 抓取 ================= */
+  function classify(text) {
+    if (/黄金|金价|贵金属|金饰|金条|金店/.test(text)) return 'gold';
+    if (/基金|ETF|公募|债基|净值|理财|私募/.test(text)) return 'fund';
+    if (/AI|人工智能|芯片|半导体|大模型|机器人|算力|互联网|手机|数码|软件/.test(text)) return 'tech';
+    if (/旺旺|可口可乐|百事|宝洁|联合利华|蒙牛|伊利|雀巢|农夫山泉|康师傅|统一|玛氏|亿滋|安踏|李宁|乳业|饮料|日化|美妆|快消/.test(text)) return 'brand';
+    if (/新品|首发|联名|跨界|代言|推出|上市(?!公)|发布会|新包装|新口味/.test(text)) return 'launch';
+    if (/零售|电商|即时零售|商超|便利店|超市|消费|渠道|直播间|淘宝|京东|拼多多|抖音|美团/.test(text)) return 'retail';
+    return 'politics';
+  }
+
+  function stripHtml(s) {
+    return String(s || '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ').trim();
+  }
+
+  function fetchText(url) {
+    return fetch(url, { mode: 'cors' }).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.text();
+    });
+  }
+
+  function parseFeedItems(xmlText) {
+    var doc = new DOMParser().parseFromString(xmlText, 'text/xml');
+    var nodes = doc.getElementsByTagName('item');
+    var isAtom = !nodes.length;
+    if (isAtom) nodes = doc.getElementsByTagName('entry');
+    var out = [];
+    for (var i = 0; i < nodes.length && out.length < 8; i++) {
+      var n = nodes[i];
+      var title = n.getElementsByTagName('title')[0];
+      var link = n.getElementsByTagName('link')[0];
+      var desc = n.getElementsByTagName('description')[0] || n.getElementsByTagName('summary')[0];
+      var pd = n.getElementsByTagName('pubDate')[0] || n.getElementsByTagName('updated')[0];
+      var t = title ? title.textContent.trim() : '';
+      var u = '';
+      if (link) {
+        u = link.getAttribute && link.getAttribute('href') || link.textContent.trim();
+      }
+      if (!t) continue;
+      var d = todayStr();
+      if (pd && pd.textContent) {
+        var dt = new Date(pd.textContent);
+        if (!isNaN(dt.getTime())) d = toStr(dt);
+      }
+      var summary = stripHtml(desc ? desc.textContent : '').slice(0, 160);
+      out.push({ title: t, url: u, summary: summary, date: d });
+    }
+    return out;
+  }
+
+  async function autoFetch() {
+    toast('🔄 正在抓取新闻，请稍候…', 3000);
+    var added = 0, failed = 0;
+    var seen = {};
+    items.forEach(function (it) { if (it.url) seen[it.url] = true; });
+    for (var f = 0; f < FEEDS.length; f++) {
+      var feed = FEEDS[f];
+      var list = null, lastErr = null;
+      for (var p = 0; p < PROXIES.length; p++) {
+        try {
+          var txt = await fetchText(PROXIES[p](feed.url));
+          list = parseFeedItems(txt);
+          if (list.length) break;
+        } catch (e) { lastErr = e; list = null; }
+      }
+      if (!list || !list.length) { failed++; continue; }
+      var n = 0;
+      for (var i = 0; i < list.length; i++) {
+        var it = list[i];
+        if (it.url && seen[it.url]) continue;
+        if (it.url) seen[it.url] = true;
+        var cat = classify(it.title + ' ' + it.summary);
+        items.unshift({
+          id: genId(), title: it.title, category: cat,
+          source: feed.name, url: it.url, summary: it.summary,
+          date: it.date, createdAt: Date.now(), starred: false, read: false
+        });
+        added++; n++;
+        if (n >= 4) break;
+      }
+    }
+    save(); render();
+    if (failed === FEEDS.length) {
+      toast('⚠️ 抓取失败：浏览器跨域限制或网络不通。请改用「每日新闻推送」文件夹中的推送脚本（更可靠）。', 6000);
+    } else {
+      toast('✅ 抓取完成：新增 ' + added + ' 条新闻' + (failed ? '，' + failed + ' 个源失败' : '') + '，可到分类里查看。', 4000);
+    }
+  }
+
+  /* ================= 提取正文（r.jina.ai） ================= */
+  async function extractFromUrl(url) {
+    toast('🔗 正在提取正文…', 3000);
+    var attempts = [
+      'https://r.jina.ai/' + url,
+      'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://r.jina.ai/' + url)
+    ];
+    var txt = null;
+    for (var i = 0; i < attempts.length; i++) {
+      try { txt = await fetchText(attempts[i]); if (txt && txt.length > 50) break; }
+      catch (e) { txt = null; }
+    }
+    if (!txt) { toast('⚠️ 提取失败：该网站可能限制了访问。请手动填写标题和摘要。', 5000); return; }
+    var title = '', body = '';
+    var lines = txt.split(/\r?\n/);
+    for (var j = 0; j < lines.length; j++) {
+      var line = lines[j].trim();
+      if (!title && /^Title:\s*/.test(line)) { title = line.replace(/^Title:\s*/, '').trim(); }
+      if (/^Markdown Content:\s*$/.test(line)) {
+        var paras = [];
+        for (var k = j + 1; k < lines.length && paras.length < 4; k++) {
+          var s = lines[k].replace(/^#+\s*/, '').replace(/[*_`>\[\]()]/g, '').replace(/!\[.*?\]\(.*?\)/g, '').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').trim();
+          if (s.length > 12) paras.push(s);
+        }
+        body = paras.join(' ').slice(0, 220);
+        break;
+      }
+    }
+    if (title) { el.fTitle.value = title; }
+    if (body) { el.fSummary.value = body; }
+    el.fUrl.value = url;
+    el.addPanel.hidden = false;
+    el.addPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    toast('✅ 已提取：标题和摘要已自动填入', 3500);
+  }
+
+  /* ================= 邮件（mailto） ================= */
+  function mailTo(subject, body) {
+    var href = 'mailto:' + MAILTO + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+    var a = document.createElement('a');
+    a.href = href; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }
+
+  /* ================= 导入 / 导出 ================= */
+  function exportData() {
+    if (!items.length) { toast('当前没有可导出的数据'); return; }
+    var blob = new Blob([JSON.stringify(items, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '每日新闻数据_' + todayStr() + '.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+    toast('✅ 已导出备份');
+  }
+
+  function importData(data) {
+    var list = null;
+    if (typeof data === 'string') {
+      var s = data.trim();
+      if (s) {
+        if (s.charAt(0) === '[' || s.charAt(0) === '{') {
+          try {
+            var obj = JSON.parse(s);
+            list = Array.isArray(obj) ? obj : (obj && Array.isArray(obj.items) ? obj.items : null);
+          } catch (e) { list = null; }
+        }
+        if (!list) { // JSON Lines：每行一条
+          list = s.split(/\r?\n/).map(function (ln) {
+            try { return JSON.parse(ln); } catch (e) { return null; }
+          }).filter(Boolean);
+        }
+      }
+    } else {
+      list = Array.isArray(data) ? data : (data && Array.isArray(data.items) ? data.items : null);
+    }
+    if (!list || !list.length) { toast('⚠️ 文件格式不正确或为空'); return; }
+    var added = 0, skipped = 0, known = {};
+    items.forEach(function (it) { known[it.id] = true; });
+    list.forEach(function (it) {
+      if (!it || !it.title) { skipped++; return; }
+      var id = it.id || genId();
+      if (known[id]) { skipped++; return; }
+      known[id] = true;
+      items.push({
+        id: id, title: String(it.title), category: CATEGORIES.some(function (c) { return c.id === it.category; }) ? it.category : classify(it.title),
+        source: it.source || '', url: it.url || '', summary: it.summary || '',
+        date: /^\d{4}-\d{2}-\d{2}$/.test(it.date || '') ? it.date : todayStr(),
+        createdAt: it.createdAt || Date.now(), starred: !!it.starred, read: !!it.read
+      });
+      added++;
+    });
+    save(); render();
+    toast('✅ 导入完成：新增 ' + added + ' 条' + (skipped ? '，跳过 ' + skipped + ' 条' : ''));
+  }
+
+  /* ================= 示例数据 ================= */
+  function loadSamples() {
+    var samples = [
+      { t: '旺旺官宣"听劝版"旺仔牛奶：主打低糖、低脂、高钙', c: 'brand', s: '腾讯新闻', u: 'https://news.qq.com/rain/a/20260820A0669200', m: '回应网友"减糖"呼声，老牌快消主动调整配方迎合健康化潮流。', d: '2026-08-20' },
+      { t: '"留白经济"：可能成为2026年最耐人寻味的消费真相', c: 'trend', s: '澎湃新闻', u: 'https://www.thepaper.cn/newsDetail_forward_33803882', m: '年轻人消费走向"留白"，品牌营销需重新理解松弛感与新中式生活。', d: '2026-08-19' },
+      { t: '新希望乳业与阿华田达成战略合作，推出低温乳饮料新品', c: 'launch', s: '界面新闻', u: 'https://www.jiemian.com/article/14940544.html', m: '麦芽可可风味"鲜"实验，跨品类联名切入低温乳饮料赛道。', d: '2026-08-19' },
+      { t: '阿里即时零售收入劲增45%，淘宝闪购UE环比持续改善', c: 'retail', s: '上海证券报', u: 'https://www.cnstock.com/commonDetail/764731', m: '即时零售进入高速增长期，平台履约能力与UE成为竞争焦点。', d: '2026-08-19' },
+      { t: '黄金现货重回4500美元/盎司，有多头下调预期', c: 'gold', s: '第一财经', u: 'https://www.sfccn.com/2026/8-20/xOMDE0MDZfMjIxNDcxOQ.html', m: '金价高位震荡，部分多头下调目标价，关注美联储政策路径。', d: '2026-08-20' },
+      { t: '免部署一键调用，国家超算互联网上线GLM-5.3 API', c: 'tech', s: '网易科技', u: 'https://www.163.com/dy/article/L4P47CPQ0514R9OJ.html', m: '大模型API接入国家算力平台，企业调用门槛进一步降低。', d: '2026-08-19' },
+      { t: '15家公募上报摊余成本法债基，又有基金经理转任研究员', c: 'fund', s: '每日经济新闻', u: 'http://www.nbd.com.cn/articles/2026-08-17/4544081.html', m: '债基申报活跃，行业人才流动加剧，稳健型产品受关注。', d: '2026-08-17' },
+      { t: '李强主持召开国务院第十二次全体会议', c: 'politics', s: '国际在线', u: 'https://news.cri.cn/20260817/1cda1588-7c9b-55ef-d7f4-16954dcc67c2.html', m: '部署下半年重点工作，强调稳增长与扩内需。', d: '2026-08-17' },
+      { t: '商务部：出台18条举措进一步激发下沉市场活力', c: 'retail', s: '光明网', u: 'https://m.gmw.cn/2026-08/18/content_1304550213.htm', m: '县域商业体系建设提速，快消品牌下沉迎来政策红利。', d: '2026-08-18' },
+      { t: 'CoCo 七夕推出奶茶美妆「好搭子」跨界联名', c: 'trend', s: 'SocialBeta', u: 'https://socialbeta.com/campaign/28269', m: '茶饮×美妆跨界营销案例，节日节点玩转年轻化沟通。', d: '2026-08-18' },
+      { t: '可乐跨界"卖沐浴露"，网友：洗澡时想喝一口怎么办', c: 'launch', s: '网易新闻', u: 'https://www.163.com/dy/article/L3ALSQL80550LJ66.html', m: '饮品巨头跨界个护，用"反差感"制造社交话题传播。', d: '2026-08-17' },
+      { t: '即时零售卷向15分钟，拼多多为什么敢推"明天达"？', c: 'retail', s: '21世纪经济报道', u: 'https://m.21jingji.com/article/20260818/herald/885addd4015a1d4bb49d1a399f4d724e.html', m: '履约时效竞争白热化，不同平台选择差异化时效策略。', d: '2026-08-18' },
+      { t: '中国市场"磁力"跃升，外资消费龙头在华业务回暖', c: 'brand', s: '中财网', u: 'https://cfbond.com/14740/14740zgcfw/ejy/cj/cjzx/4896205428.shtml', m: '外资快消巨头在华销售复苏，中国市场仍是关键增长引擎。', d: '2026-08-18' },
+      { t: '增收不增利，旺旺集团面临"重大经营危机"', c: 'brand', s: '大众日报', u: 'https://m.dzplus.dzng.com/share/general/0/NEWS3612760NXDHZDLQWZTLG', m: '老牌食品企业转型压力显现，成本与渠道变革迫在眉睫。', d: '2026-08-19' },
+      { t: '金价大幅反弹，港股黄金及贵金属板块爆发', c: 'gold', s: '香港商报', u: 'https://www.hkcd.com.hk/hkcdweb/content/2026/08/20/content_8770608.html', m: '避险情绪升温带动板块大涨，黄金零售消费端也受关注。', d: '2026-08-20' },
+      { t: '开源模型的可用性快速提升提振AI芯片景气，芯片ETF涨超2%', c: 'tech', s: '东方财富', u: 'https://finance.eastmoney.com/a/202608173843241418.html', m: '开源生态繁荣拉动算力需求，AI芯片产业链景气度上行。', d: '2026-08-17' },
+      { t: '国家发展改革委部署加快2026年新型政策性金融工具投放', c: 'politics', s: '新华财经', u: 'https://m.cnfin.com/hg-lb//zixun/20260817/4456245_1.html', m: '稳投资政策加码，重点领域资金支持提速。', d: '2026-08-17' }
+    ];
+    var added = 0;
+    samples.forEach(function (s) {
+      var dup = items.some(function (it) { return it.title === s.t; });
+      if (dup) return;
+      items.unshift({
+        id: genId(), title: s.t, category: s.c, source: s.s, url: s.u,
+        summary: s.m, date: s.d, createdAt: Date.now() - added * 1000,
+        starred: false, read: false
+      });
+      added++;
+    });
+    save(); render();
+    toast(added ? '✅ 已载入 ' + added + ' 条示例新闻' : '示例新闻已存在');
+  }
+
+  /* ================= 事件 ================= */
+  document.querySelector('.sidebar').addEventListener('click', function (e) {
+    var b = e.target.closest('.nav-btn');
+    if (!b) return;
+    var act = b.dataset.act;
+    if (act === 'add') {
+      el.fDate.value = todayStr();
+      el.addPanel.hidden = false;
+      el.addPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    if (act === 'fetch') { autoFetch(); return; }
+    if (act === 'extract') {
+      var u = el.extractUrl.value.trim();
+      if (u) extractFromUrl(u);
+      else {
+        el.addPanel.hidden = false;
+        el.addPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        toast('请在添加面板粘贴网址后点「提取」');
+      }
+      return;
+    }
+    if (act === 'import') { el.fileImport.click(); return; }
+    if (act === 'export') { exportData(); return; }
+    if (act === 'clear') {
+      if (!items.length) { toast('当前没有数据可清空'); return; }
+      if (!confirm('确定清空所有新闻吗？建议先导出备份。')) return;
+      items = []; save(); render();
+      toast('🗑 已清空');
+      return;
+    }
+    if (b.dataset.cat) { currentCat = b.dataset.cat; switchView('list'); return; }
+    if (b.dataset.view) { switchView(b.dataset.view); }
+  });
+
+  el.search.addEventListener('input', function () {
+    searchTerm = el.search.value.trim().toLowerCase();
+    if (currentView === 'list') renderList();
+    else if (currentView === 'today') renderToday();
+    else renderWeekly();
+  });
+
+  $('btnCopyToday').addEventListener('click', function () {
+    var t = todayStr();
+    copyText(buildDigestText(items.filter(function (it) { return (it.date || t) === t; }), 'today'), '✅ 今日摘要已复制');
+  });
+  $('btnMailToday').addEventListener('click', function () {
+    var t = todayStr();
+    var body = buildDigestText(items.filter(function (it) { return (it.date || t) === t; }), 'today');
+    mailTo('今日快消新闻速递 ' + t, body);
+    toast('📧 已调用邮件程序（自动定时推送请用推送脚本）');
+  });
+  $('btnFetchHere').addEventListener('click', autoFetch);
+
+  $('btnCopyWeek').addEventListener('click', function () {
+    var since = weekSince();
+    copyText(buildDigestText(items.filter(function (it) { return (it.date || todayStr()) >= since; }), 'week'), '✅ 周总结已复制');
+  });
+  $('btnMailWeek').addEventListener('click', function () {
+    var since = weekSince();
+    var body = buildDigestText(items.filter(function (it) { return (it.date || todayStr()) >= since; }), 'week');
+    mailTo('快消新闻周总结 ' + weekSince() + ' ~ ' + todayStr(), body);
+    toast('📧 已调用邮件程序');
+  });
+  $('btnRegenWeek').addEventListener('click', renderWeekly);
+
+  $('btnSample').addEventListener('click', loadSamples);
+  $('btnExtract').addEventListener('click', function () {
+    var u = el.extractUrl.value.trim();
+    if (!u) { toast('请先粘贴新闻网址'); return; }
+    if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+    extractFromUrl(u);
+  });
+  $('btnCancel').addEventListener('click', function () { el.addPanel.hidden = true; el.addForm.reset(); });
+
+  el.addForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var title = el.fTitle.value.trim();
+    if (!title) { toast('请输入新闻标题'); el.fTitle.focus(); return; }
+    items.unshift({
+      id: genId(), title: title, category: el.fCat.value,
+      source: el.fSource.value.trim(), url: el.fUrl.value.trim(),
+      summary: el.fSummary.value.trim(), date: el.fDate.value || todayStr(),
+      createdAt: Date.now(), starred: false, read: false
+    });
+    save();
+    el.addForm.reset(); el.addPanel.hidden = true;
+    currentCat = 'all'; searchTerm = ''; el.search.value = '';
+    switchView('list');
+    toast('✅ 新闻已保存');
+  });
+
+  document.getElementById('newsList').addEventListener('click', function (e) {
+    var btn = e.target.closest('button[data-act]');
+    if (!btn) return;
+    var card = e.target.closest('.card');
+    if (!card) return;
+    var item = null;
+    for (var i = 0; i < items.length; i++) if (items[i].id === card.dataset.id) { item = items[i]; break; }
+    if (!item) return;
+    var act = btn.dataset.act;
+    if (act === 'star') item.starred = !item.starred;
+    else if (act === 'read') item.read = !item.read;
+    else if (act === 'del') {
+      if (!confirm('确定删除这条新闻吗？')) return;
+      items = items.filter(function (it) { return it.id !== item.id; });
+    }
+    save(); render();
+  });
+  // 今日速览 / 周总结里的卡片操作同样生效
+  el.todayList.addEventListener('click', cardClick);
+  el.weekList.addEventListener('click', cardClick);
+  function cardClick(e) {
+    var btn = e.target.closest('button[data-act]');
+    if (!btn) return;
+    var card = e.target.closest('.card');
+    if (!card) return;
+    var item = null;
+    for (var i = 0; i < items.length; i++) if (items[i].id === card.dataset.id) { item = items[i]; break; }
+    if (!item) return;
+    var act = btn.dataset.act;
+    if (act === 'star') item.starred = !item.starred;
+    else if (act === 'read') item.read = !item.read;
+    else if (act === 'del') {
+      if (!confirm('确定删除这条新闻吗？')) return;
+      items = items.filter(function (it) { return it.id !== item.id; });
+    }
+    save();
+    if (currentView === 'today') renderToday(); else if (currentView === 'weekly') renderWeekly(); else renderList();
+    renderSidebar();
+  }
+
+  el.fileImport.addEventListener('change', function () {
+    var file = el.fileImport.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      try { importData(JSON.parse(reader.result)); }
+      catch (err) { toast('⚠️ 导入失败：文件不是有效的 JSON'); }
+      el.fileImport.value = '';
+    };
+    reader.readAsText(file, 'utf-8');
+  });
+
+  /* ================= 初始化 ================= */
+  var catOptions = '';
+  CATEGORIES.forEach(function (c) { catOptions += '<option value="' + c.id + '">' + c.icon + ' ' + c.name + '</option>'; });
+  el.fCat.innerHTML = catOptions;
+
+  var d = new Date();
+  var week = ['日', '一', '二', '三', '四', '五', '六'][d.getDay()];
+  el.dateChip.textContent = d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日 · 星期' + week + ' · 未读 ' + items.filter(function (it) { return !it.read; }).length + ' 条';
+
+  render();
+})();
+</script>
+</body>
+</html>
