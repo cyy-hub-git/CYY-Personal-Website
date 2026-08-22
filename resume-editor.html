@@ -1,0 +1,2953 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>简历编辑器 - 陈伊洋</title>
+<style>
+/* ===== Reset & Base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
+  background: #f5f6f8;
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  color: #2c3e50;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width: 220px;
+  min-width: 220px;
+  background: #fff;
+  border-right: 1px solid #e8eaed;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  z-index: 100;
+}
+.sidebar-header {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid #f0f1f3;
+}
+.sidebar-header h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a1a;
+  letter-spacing: 1px;
+}
+.sidebar-header .sub {
+  font-size: 11px;
+  color: #999;
+  margin-top: 4px;
+}
+.sidebar-nav {
+  flex: 1;
+  padding: 12px 0;
+  overflow-y: auto;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 20px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #555;
+  transition: all 0.15s;
+  border-left: 3px solid transparent;
+  font-weight: 500;
+  user-select: none;
+}
+.nav-item:hover { background: #f8f9fb; color: #1a1a1a; }
+.nav-item.active {
+  background: #eef3ff;
+  color: #1a56db;
+  border-left-color: #1a56db;
+  font-weight: 600;
+}
+.nav-item .nav-icon { font-size: 16px; width: 22px; text-align: center; }
+.nav-divider {
+  margin: 8px 20px;
+  border-top: 1px solid #f0f1f3;
+}
+.nav-section-label {
+  padding: 6px 20px 4px;
+  font-size: 10px;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+}
+.sidebar-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #f0f1f3;
+}
+.sidebar-footer button {
+  width: 100%;
+  padding: 9px 0;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.btn-export-pdf {
+  background: #1a56db;
+  color: #fff;
+}
+.btn-export-pdf:hover { background: #1347b3; }
+
+/* ===== MAIN CONTENT ===== */
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 32px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+/* Panels */
+.content-panel { display: none; width: 100%; }
+.content-panel.active { display: block; }
+
+/* ===== RESUME PANEL ===== */
+#panel-resume {
+  display: none;
+  max-width: 800px;
+  margin: 0 auto;
+}
+#panel-resume.active { display: block; }
+
+.resume-wrapper {
+  background: #fff;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* Resume Header */
+.resume-header {
+  background: #1a3a4a;
+  color: #fff;
+  padding: 26px 32px 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+.header-left { flex: 1; min-width: 0; }
+.header-left h1 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  margin-bottom: 4px;
+}
+.header-left .subtitle {
+  font-size: 13px;
+  font-weight: 400;
+  opacity: 0.8;
+  margin-bottom: 10px;
+}
+.header-left .contact-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 12px;
+  opacity: 0.85;
+}
+.header-left .contact-row span { white-space: nowrap; display: inline-flex; align-items: center; gap: 3px; }
+
+.photo-area { flex-shrink: 0; }
+.photo-container {
+  width: 90px; height: 117px;
+  border-radius: 4px; overflow: hidden;
+  background: rgba(255,255,255,0.1);
+  border: 2px dashed rgba(255,255,255,0.3);
+  cursor: pointer; position: relative;
+  transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center;
+}
+.photo-container:hover { border-color: rgba(255,255,255,0.6); background: rgba(255,255,255,0.15); }
+.photo-container.has-photo { border-style: solid; border-color: rgba(255,255,255,0.4); }
+.photo-container img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.photo-placeholder { color: rgba(255,255,255,0.45); font-size: 11px; text-align: center; line-height: 1.4; pointer-events: none; }
+.photo-actions { display: flex; gap: 3px; margin-top: 5px; justify-content: center; }
+.photo-actions button {
+  background: rgba(255,255,255,0.12); border: none; color: #fff;
+  font-size: 10px; padding: 2px 7px; border-radius: 3px;
+  cursor: pointer; transition: background 0.2s; font-family: inherit;
+}
+.photo-actions button:hover { background: rgba(255,255,255,0.25); }
+.photo-actions button.danger:hover { background: rgba(220,53,69,0.6); }
+
+/* Resume Body */
+.resume-body { padding: 24px 32px 28px; }
+
+.section { margin-bottom: 18px; }
+.section:last-child { margin-bottom: 0; }
+.section-title {
+  font-size: 15px; font-weight: 700; color: #1a3a4a;
+  padding-bottom: 6px; border-bottom: 2px solid #e0e4e8;
+  margin-bottom: 12px; letter-spacing: 1.5px;
+  display: flex; align-items: center; gap: 6px;
+}
+.section-dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  background: #1a56db;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.entry { margin-bottom: 12px; padding-left: 14px; border-left: 2px solid #e8eaed; }
+.entry:last-child { margin-bottom: 0; }
+.entry-header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px; margin-bottom: 2px; }
+.entry-school, .entry-company { font-size: 14px; font-weight: 700; color: #1a3a4a; }
+.entry-role { font-size: 12px; font-weight: 500; color: #666; margin-left: 6px; }
+.entry-date { font-size: 11px; color: #999; white-space: nowrap; }
+.entry-sub { font-size: 11px; color: #888; margin-bottom: 3px; }
+.entry-detail { font-size: 12px; color: #555; line-height: 1.7; }
+.entry-detail ul { list-style: none; padding: 0; }
+.entry-detail ul li { position: relative; padding-left: 14px; margin-bottom: 2px; }
+.entry-detail ul li::before { content: '—'; position: absolute; left: 0; color: #1a56db; font-size: 10px; font-weight: bold; }
+
+[contenteditable="true"]:hover { outline: 1px dashed #c0c8d8; border-radius: 2px; }
+[contenteditable="true"]:focus { outline: 2px solid #1a56db; border-radius: 2px; background: rgba(26,86,219,0.02); }
+
+.skills-block { font-size: 12px; color: #555; line-height: 1.8; }
+.skills-block .skill-line { margin-bottom: 4px; }
+.skills-block strong { color: #1a3a4a; }
+
+/* ===== MATERIAL PANEL ===== */
+#panel-material {
+  max-width: 960px;
+  margin: 0 auto;
+}
+#panel-material.active { display: block; }
+
+.panel-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.panel-card-header {
+  padding: 14px 20px;
+  background: #fafbfc;
+  border-bottom: 1px solid #eef1f4;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a3a4a;
+}
+
+.jd-section {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f2f5;
+}
+.jd-textarea {
+  width: 100%;
+  min-height: 70px;
+  border: 1px solid #e0e3e8;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+  margin-bottom: 8px;
+}
+.jd-textarea:focus { border-color: #1a56db; }
+.btn-analyze {
+  padding: 7px 16px;
+  border: none;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  background: #4caf50;
+  color: #fff;
+  transition: all 0.15s;
+}
+.btn-analyze:hover { background: #388e3c; }
+.btn-analyze:disabled { background: #ccc; cursor: not-allowed; }
+.jd-hint {
+  font-size: 11px;
+  color: #aaa;
+  margin-left: 8px;
+}
+
+.mat-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 14px 20px;
+  border-bottom: 1px solid #f0f2f5;
+}
+.mat-search {
+  flex: 1; min-width: 160px;
+  padding: 7px 12px;
+  border: 1px solid #e0e3e8;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+}
+.mat-search:focus { border-color: #1a56db; }
+.mat-filter-group { display: flex; gap: 5px; flex-wrap: wrap; }
+.mat-filter-chip {
+  padding: 4px 10px;
+  border-radius: 14px;
+  border: 1px solid #e0e3e8;
+  background: #fff;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.mat-filter-chip:hover { border-color: #1a56db; color: #1a56db; }
+.mat-filter-chip.active { background: #1a56db; color: #fff; border-color: #1a56db; }
+.mat-stats { font-size: 11px; color: #aaa; margin-left: auto; white-space: nowrap; }
+
+.mat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 10px;
+  padding: 16px 20px;
+}
+.mat-card {
+  border: 1px solid #eef1f4;
+  border-radius: 6px;
+  padding: 12px 14px;
+  transition: all 0.15s;
+  cursor: default;
+}
+.mat-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-color: #d0d5dd; }
+.mat-card.selected { border-color: #1a56db; background: #f8faff; }
+.mat-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.mat-card-title { font-size: 13px; font-weight: 700; color: #1a3a4a; flex: 1; }
+.mat-card-badge {
+  font-size: 9px;
+  padding: 2px 7px;
+  border-radius: 8px;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.badge-buyer { background: #e3f2fd; color: #1565c0; }
+.badge-data { background: #fce4ec; color: #c62828; }
+.badge-inventory { background: #fff3e0; color: #e65100; }
+.badge-promo { background: #f3e5f5; color: #7b1fa2; }
+.badge-supply { background: #e0f2f1; color: #00695c; }
+.badge-plan { background: #e8f5e9; color: #2e7d32; }
+.badge-interview { background: #fff8e1; color: #f57f17; }
+
+.mat-card-body { font-size: 11px; color: #666; line-height: 1.6; }
+.mat-card-body ul { list-style: none; padding: 0; }
+.mat-card-body ul li { position: relative; padding-left: 12px; margin-bottom: 2px; }
+.mat-card-body ul li::before { content: '·'; position: absolute; left: 2px; color: #1a56db; font-weight: bold; }
+.mat-card-actions { display: flex; gap: 5px; margin-top: 8px; justify-content: flex-end; }
+.mat-card-actions button {
+  font-size: 10px;
+  padding: 3px 9px;
+  border-radius: 3px;
+  border: 1px solid #e0e3e8;
+  background: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.mat-card-actions button:hover { background: #f5f7fa; }
+.mat-card-actions button.btn-copy { border-color: #1a56db; color: #1a56db; }
+.mat-card-actions button.btn-copy:hover { background: #eef3ff; }
+.mat-card-actions button.btn-select { border-color: #4caf50; color: #4caf50; }
+.mat-card-actions button.btn-select.selected { background: #4caf50; color: #fff; }
+
+.relevance-score {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: #e8f5e9;
+  color: #2e7d32;
+  font-weight: 700;
+}
+
+/* ===== TRACKER PANEL ===== */
+#panel-tracker {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+#panel-tracker.active { display: block; }
+
+.tracker-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.tracker-toolbar button {
+  padding: 7px 14px;
+  border: none;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  background: #1a56db;
+  color: #fff;
+}
+.tracker-toolbar button:hover { background: #1347b3; }
+.tracker-toolbar button.btn-csv { background: #4caf50; }
+.tracker-toolbar button.btn-csv:hover { background: #388e3c; }
+.tracker-stats {
+  font-size: 11px;
+  color: #999;
+  margin-left: auto;
+  display: flex;
+  gap: 14px;
+}
+.tracker-stats .stat-num { font-weight: 700; color: #1a3a4a; }
+
+.job-table-wrap { overflow-x: auto; }
+.job-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.job-table th {
+  background: #fafbfc;
+  padding: 9px 10px;
+  text-align: left;
+  font-weight: 700;
+  color: #1a3a4a;
+  border-bottom: 2px solid #e8eaed;
+  white-space: nowrap;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+.job-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid #f2f4f6;
+  vertical-align: middle;
+}
+.job-table tr:hover td { background: #fafbfc; }
+.job-table td[contenteditable="true"] {
+  min-width: 50px;
+  outline: none;
+}
+.job-table td[contenteditable="true"]:hover { outline: 1px dashed #c0c8d0; border-radius: 2px; }
+.job-table td[contenteditable="true"]:focus { outline: 2px solid #1a56db; border-radius: 2px; background: rgba(26,86,219,0.02); }
+
+.status-select {
+  padding: 4px 7px;
+  border-radius: 4px;
+  border: 1px solid #e0e3e8;
+  font-size: 11px;
+  font-family: inherit;
+  background: #fff;
+  cursor: pointer;
+  min-width: 70px;
+}
+.status-select:focus { outline: none; border-color: #1a56db; }
+
+.status-投递 { background: #e3f2fd; color: #1565c0; }
+.status-测评 { background: #fff3e0; color: #e65100; }
+.status-笔试 { background: #fce4ec; color: #c62828; }
+.status-一面 { background: #f3e5f5; color: #7b1fa2; }
+.status-二面 { background: #ede7f6; color: #4527a0; }
+.status-三面 { background: #e8eaf6; color: #283593; }
+.status-HR面 { background: #e0f2f1; color: #00695c; }
+.status-Offer { background: #e8f5e9; color: #2e7d32; }
+.status-拒信 { background: #ffebee; color: #b71c1c; }
+.status-放弃 { background: #f5f5f5; color: #757575; }
+.status-入职 { background: #c8e6c9; color: #1b5e20; }
+
+.job-table .btn-delete {
+  background: none; border: none;
+  color: #ccc; cursor: pointer;
+  font-size: 15px; padding: 1px 5px;
+  transition: color 0.15s;
+}
+.job-table .btn-delete:hover { color: #e53935; }
+
+/* ===== Photo Crop Modal ===== */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+  z-index: 2000; display: flex; align-items: center; justify-content: center;
+}
+.modal {
+  background: #fff; border-radius: 10px; padding: 22px;
+  width: 520px; max-width: 95vw; box-shadow: 0 16px 48px rgba(0,0,0,0.25);
+}
+.modal h3 { font-size: 16px; margin-bottom: 14px; color: #1a3a4a; }
+.crop-container { position: relative; width: 100%; height: 340px; background: #333; border-radius: 6px; overflow: hidden; margin-bottom: 14px; display: flex; align-items: center; justify-content: center; }
+.crop-controls { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.crop-controls label { font-size: 12px; color: #666; white-space: nowrap; }
+.crop-controls input[type="range"] { flex: 1; accent-color: #1a56db; }
+.crop-controls span { font-size: 11px; color: #999; min-width: 30px; text-align: center; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.modal-actions button { padding: 8px 18px; border: none; border-radius: 5px; font-size: 13px; cursor: pointer; font-weight: 600; font-family: inherit; transition: all 0.15s; }
+.modal-actions .btn-primary { background: #1a56db; color: #fff; }
+.modal-actions .btn-primary:hover { background: #1347b3; }
+.modal-actions .btn-cancel { background: #f1f3f4; color: #666; }
+.modal-actions .btn-cancel:hover { background: #e0e4e8; }
+
+/* ===== Toast ===== */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: #fff;
+  padding: 9px 22px;
+  border-radius: 18px;
+  font-size: 12px;
+  z-index: 9999;
+  animation: toastIn 0.3s, toastOut 0.3s 1.7s forwards;
+  pointer-events: none;
+}
+@keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(8px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+@keyframes toastOut { from { opacity: 1; } to { opacity: 0; } }
+
+/* ===== Print ===== */
+@media print {
+  body { background: #fff; display: block; overflow: visible; }
+  .sidebar, .modal-overlay { display: none !important; }
+  .main-content { padding: 0; display: block; overflow: visible; }
+  #panel-resume { max-width: none; }
+  .resume-wrapper { box-shadow: none; border-radius: 0; width: 210mm; min-height: 297mm; }
+  [contenteditable="true"]:hover, [contenteditable="true"]:focus { outline: none !important; background: transparent !important; }
+  @page { size: A4; margin: 0; }
+}
+
+/* ===== Resume Toolbar ===== */
+.resume-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.resume-toolbar button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.btn-save-version {
+  background: #1a56db;
+  color: #fff;
+}
+.btn-save-version:hover { background: #1347b3; }
+.btn-toggle-versions {
+  background: #f1f3f5;
+  color: #555;
+  border: 1px solid #e0e3e8 !important;
+}
+.btn-toggle-versions:hover { background: #e8eaed; }
+.btn-toggle-versions.has-new::after {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  background: #e53935;
+  border-radius: 50%;
+  margin-left: 2px;
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+.version-count {
+  font-size: 11px;
+  color: #999;
+  margin-left: auto;
+}
+
+/* ===== Version History Panel ===== */
+.version-panel {
+  margin-top: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+  overflow: hidden;
+  display: none;
+}
+.version-panel.show { display: block; }
+.version-panel-header {
+  padding: 14px 20px;
+  background: #fafbfc;
+  border-bottom: 1px solid #eef1f4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a3a4a;
+}
+.version-list { max-height: 400px; overflow-y: auto; }
+.version-item {
+  padding: 12px 20px;
+  border-bottom: 1px solid #f0f2f5;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: background 0.15s;
+}
+.version-item:hover { background: #fafbfc; }
+.version-item:last-child { border-bottom: none; }
+.version-item.current { background: #f0f6ff; border-left: 3px solid #1a56db; }
+.version-item.previewing { background: #fffde7; border-left: 3px solid #f9a825; }
+.version-item .v-time {
+  font-size: 11px;
+  color: #999;
+  white-space: nowrap;
+  min-width: 120px;
+}
+.version-item .v-summary {
+  font-size: 12px;
+  color: #555;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.version-item .v-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.version-item .v-actions button {
+  font-size: 10px;
+  padding: 3px 9px;
+  border-radius: 3px;
+  border: 1px solid #e0e3e8;
+  background: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.version-item .v-actions button:hover { background: #f5f7fa; }
+.version-item .v-actions .v-btn-preview { border-color: #f9a825; color: #f57f17; }
+.version-item .v-actions .v-btn-preview:hover { background: #fffde7; }
+.version-item .v-actions .v-btn-restore { border-color: #1a56db; color: #1a56db; }
+.version-item .v-actions .v-btn-restore:hover { background: #eef3ff; }
+.version-item .v-actions .v-btn-delete { border-color: #ffcdd2; color: #e53935; }
+.version-item .v-actions .v-btn-delete:hover { background: #ffebee; }
+
+.version-empty {
+  padding: 32px 20px;
+  text-align: center;
+  color: #bbb;
+  font-size: 12px;
+}
+
+/* Resume edit hint on sections */
+.section-title .edit-hint {
+  font-size: 10px;
+  color: #bbb;
+  margin-left: auto;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.section:hover .section-title .edit-hint { opacity: 1; }
+
+/* ===== Work Log Section ===== */
+.worklog-section { padding: 16px 20px; border-bottom: 1px solid #f0f2f5; }
+.worklog-textarea {
+  width: 100%;
+  min-height: 120px;
+  border: 1px solid #e0e3e8;
+  border-radius: 6px;
+  padding: 12px 14px;
+  font-size: 12px;
+  font-family: inherit;
+  line-height: 1.7;
+  resize: vertical;
+  outline: none;
+}
+.worklog-textarea:focus { border-color: #1a56db; }
+.worklog-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.btn-parse {
+  padding: 7px 16px;
+  border: none;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  background: #1a56db;
+  color: #fff;
+  transition: all 0.15s;
+}
+.btn-parse:hover { background: #1347b3; }
+.btn-parse:disabled { background: #ccc; cursor: not-allowed; }
+.worklog-hint {
+  font-size: 11px;
+  color: #aaa;
+}
+.worklog-preview {
+  margin-top: 14px;
+  padding: 14px;
+  background: #fafbfc;
+  border: 1px solid #e8eaed;
+  border-radius: 6px;
+  display: none;
+}
+.worklog-preview.show { display: block; }
+.worklog-preview h4 {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+.worklog-preview .preview-card {
+  background: #fff;
+  border: 1px solid #e0e3e8;
+  border-radius: 5px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+.worklog-preview .preview-card .preview-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a3a4a;
+  margin-bottom: 4px;
+}
+.worklog-preview .preview-card .preview-badge {
+  display: inline-block;
+  font-size: 9px;
+  padding: 2px 7px;
+  border-radius: 8px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.worklog-preview .preview-card .preview-bullets {
+  font-size: 11px;
+  color: #666;
+  line-height: 1.6;
+  list-style: none;
+  padding: 0;
+}
+.worklog-preview .preview-card .preview-bullets li {
+  position: relative;
+  padding-left: 12px;
+  margin-bottom: 2px;
+}
+.worklog-preview .preview-card .preview-bullets li::before {
+  content: '·';
+  position: absolute;
+  left: 2px;
+  color: #1a56db;
+  font-weight: bold;
+}
+.worklog-preview .preview-edit-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.worklog-preview .preview-edit-row label {
+  font-size: 11px;
+  color: #888;
+  white-space: nowrap;
+  min-width: 36px;
+}
+.worklog-preview .preview-edit-row input,
+.worklog-preview .preview-edit-row select {
+  font-size: 12px;
+  padding: 4px 8px;
+  border: 1px solid #e0e3e8;
+  border-radius: 4px;
+  font-family: inherit;
+  outline: none;
+  flex: 1;
+}
+.worklog-preview .preview-edit-row input:focus,
+.worklog-preview .preview-edit-row select:focus { border-color: #1a56db; }
+.worklog-preview .preview-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+.worklog-preview .preview-actions button {
+  font-size: 12px;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 5px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.btn-add-lib {
+  background: #4caf50;
+  color: #fff;
+}
+.btn-add-lib:hover { background: #388e3c; }
+.btn-discard { background: #f1f3f4; color: #666; }
+.btn-discard:hover { background: #e0e4e8; }
+.worklog-history {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #aaa;
+}
+.worklog-history span {
+  cursor: pointer;
+  color: #1a56db;
+  text-decoration: underline;
+}
+.worklog-history span:hover { color: #1347b3; }
+.mat-card.custom { border-left: 3px solid #1a56db; }
+.mat-card .mat-card-meta {
+  font-size: 9px;
+  color: #aaa;
+  margin-top: 4px;
+}
+.mat-card .btn-delete-mat {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  border: 1px solid #e0e3e8;
+  background: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  color: #e53935;
+  border-color: #ffcdd2;
+}
+.mat-card .btn-delete-mat:hover { background: #ffebee; }
+
+/* ===== AUTUMN RECRUITMENT LINKS PANEL ===== */
+#panel-links {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+#panel-links.active { display: block; }
+
+.links-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.links-toolbar button {
+  padding: 7px 14px;
+  border: none;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  background: #1a56db;
+  color: #fff;
+}
+.links-toolbar button:hover { background: #1347b3; }
+.links-toolbar button.btn-link-add {
+  background: #4caf50;
+}
+.links-toolbar button.btn-link-add:hover { background: #388e3c; }
+.links-toolbar button.btn-link-toggle { background: #f1f3f5; color: #555; border: 1px solid #e0e3e8; }
+.links-toolbar button.btn-link-toggle:hover { background: #e8eaed; }
+
+.link-stats {
+  font-size: 11px;
+  color: #999;
+  margin-left: auto;
+  display: flex;
+  gap: 14px;
+}
+.link-stats .stat-num { font-weight: 700; color: #1a3a4a; }
+
+/* Add link form */
+.link-form-section {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f2f5;
+  display: none;
+}
+.link-form-section.show { display: block; }
+.link-form-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.link-form-row input, .link-form-row select {
+  padding: 7px 12px;
+  border: 1px solid #e0e3e8;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  flex: 1;
+  min-width: 120px;
+}
+.link-form-row input:focus, .link-form-row select:focus { border-color: #1a56db; }
+.link-form-row .full-width { flex: 2; }
+.link-form-actions {
+  display: flex; gap: 8px; justify-content: flex-end;
+}
+.link-form-actions button {
+  font-size: 12px; padding: 6px 14px; border: none; border-radius: 5px;
+  font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s;
+}
+.btn-link-save { background: #4caf50; color: #fff; }
+.btn-link-save:hover { background: #388e3c; }
+.btn-link-cancel { background: #f1f3f4; color: #666; }
+.btn-link-cancel:hover { background: #e0e4e8; }
+
+/* Link cards grid */
+.link-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 12px;
+  padding: 16px 20px;
+}
+.link-card {
+  border: 1px solid #eef1f4;
+  border-radius: 8px;
+  padding: 14px 16px;
+  transition: all 0.15s;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.link-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.06); border-color: #d0d5dd; }
+.link-card.urgent { border-left: 4px solid #e53935; }
+.link-card.following { border-left: 4px solid #f9a825; }
+.link-card.applied { border-left: 4px solid #1a56db; }
+.link-card.closed { border-left: 4px solid #bbb; background: #fafafa; }
+.link-card.closed .link-card-title { color: #999; }
+.link-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 6px;
+}
+.link-card-title {
+  font-size: 14px; font-weight: 700; color: #1a3a4a;
+  flex: 1; line-height: 1.4;
+}
+.link-card-status {
+  font-size: 10px; padding: 3px 8px; border-radius: 10px;
+  white-space: nowrap; font-weight: 600;
+}
+.link-status-urgent { background: #ffebee; color: #c62828; }
+.link-status-following { background: #fff8e1; color: #f57f17; }
+.link-status-applied { background: #e3f2fd; color: #1565c0; }
+.link-status-closed { background: #f5f5f5; color: #9e9e9e; }
+
+.link-card-meta {
+  font-size: 11px; color: #888;
+  display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+}
+.link-card-meta span { display: inline-flex; align-items: center; gap: 3px; }
+.link-card-tags {
+  display: flex; gap: 4px; flex-wrap: wrap;
+}
+.link-card-tags .tag {
+  font-size: 10px; padding: 2px 7px; border-radius: 8px;
+  background: #f0f4ff; color: #1a56db;
+}
+
+.link-card-notes {
+  font-size: 11px; color: #666; line-height: 1.5;
+  background: #fafbfc; border-radius: 5px; padding: 8px 10px;
+  display: none;
+}
+.link-card-notes.show { display: block; }
+
+.link-card-actions {
+  display: flex; gap: 5px; justify-content: flex-end; flex-wrap: wrap;
+}
+.link-card-actions button {
+  font-size: 10px; padding: 4px 10px; border-radius: 4px;
+  border: 1px solid #e0e3e8; background: #fff; cursor: pointer;
+  font-family: inherit; transition: all 0.15s; white-space: nowrap;
+}
+.link-card-actions button:hover { background: #f5f7fa; }
+.btn-link-open { border-color: #1a56db !important; color: #1a56db !important; }
+.btn-link-open:hover { background: #eef3ff !important; }
+.btn-link-follow { border-color: #f9a825 !important; color: #f57f17 !important; }
+.btn-link-follow:hover { background: #fffde7 !important; }
+.btn-link-applied { border-color: #4caf50 !important; color: #4caf50 !important; }
+.btn-link-applied:hover { background: #e8f5e9 !important; }
+.btn-link-delete { color: #e53935 !important; border-color: #ffcdd2 !important; }
+.btn-link-delete:hover { background: #ffebee !important; }
+
+/* Link update log */
+.link-update-panel {
+  padding: 16px 20px;
+  border-top: 1px solid #f0f2f5;
+}
+.link-update-panel h4 {
+  font-size: 13px; font-weight: 700; color: #1a3a4a;
+  margin-bottom: 10px;
+}
+.link-update-list {
+  font-size: 11px; color: #666;
+}
+.link-update-list .update-item {
+  padding: 6px 0; border-bottom: 1px dashed #eee;
+  display: flex; gap: 10px; align-items: baseline;
+}
+.link-update-list .update-item:last-child { border-bottom: none; }
+.link-update-list .update-date {
+  color: #999; white-space: nowrap; min-width: 80px;
+}
+.link-update-list .update-action {
+  color: #1a56db; white-space: nowrap; min-width: 42px; font-weight: 600;
+}
+.link-update-list .update-detail { color: #555; }
+.link-summary-empty {
+  font-size: 11px; color: #bbb; text-align: center; padding: 12px 0;
+}
+
+/* Link filter bar */
+.link-filter-bar {
+  display: flex; gap: 6px; align-items: center;
+  padding: 12px 20px; border-bottom: 1px solid #f0f2f5; flex-wrap: wrap;
+}
+.link-filter-bar .filter-chip {
+  padding: 4px 12px; border-radius: 14px;
+  border: 1px solid #e0e3e8; background: #fff;
+  font-size: 11px; cursor: pointer; transition: all 0.15s;
+  font-family: inherit; white-space: nowrap;
+}
+.link-filter-bar .filter-chip:hover { border-color: #1a56db; color: #1a56db; }
+.link-filter-bar .filter-chip.act { background: #1a56db; color: #fff; border-color: #1a56db; }
+.link-filter-bar .link-search {
+  flex: 1; min-width: 150px; padding: 6px 12px; border: 1px solid #e0e3e8;
+  border-radius: 6px; font-size: 11px; font-family: inherit; outline: none;
+}
+.link-filter-bar .link-search:focus { border-color: #1a56db; }
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .sidebar { width: 64px; min-width: 64px; }
+  .sidebar-header { padding: 16px 10px; text-align: center; }
+  .sidebar-header h2 { font-size: 12px; }
+  .sidebar-header .sub { display: none; }
+  .nav-item { padding: 10px; justify-content: center; font-size: 0; gap: 0; }
+  .nav-item .nav-icon { font-size: 18px; }
+  .nav-section-label { display: none; }
+  .nav-divider { margin: 4px 10px; }
+  .main-content { padding: 16px; }
+  .mat-grid { grid-template-columns: 1fr; }
+  .link-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <h2>📋 简历工作台</h2>
+    <div class="sub">陈伊洋 · 2027届</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">内容</div>
+    <div class="nav-item active" data-panel="resume" onclick="switchPanel('resume', this)">
+      <span class="nav-icon">📄</span> 简历预览
+    </div>
+    <div class="nav-item" data-panel="material" onclick="switchPanel('material', this)">
+      <span class="nav-icon">📦</span> 实习素材库
+    </div>
+    <div class="nav-item" data-panel="tracker" onclick="switchPanel('tracker', this)">
+      <span class="nav-icon">📋</span> 投递进度表
+    </div>
+    <div class="nav-item" data-panel="links" onclick="switchPanel('links', this)">
+      <span class="nav-icon">🔗</span> 秋招链接导航
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="btn-export-pdf" onclick="exportPDF()">📥 导出 PDF</button>
+  </div>
+</aside>
+
+<!-- ===== MAIN CONTENT ===== -->
+<main class="main-content">
+
+  <!-- ========== RESUME PANEL ========== -->
+  <div class="content-panel active" id="panel-resume">
+    <!-- Resume Toolbar -->
+    <div class="resume-toolbar">
+      <button class="btn-save-version" onclick="saveResumeVersion()" title="保存当前简历快照">💾 保存版本</button>
+      <button class="btn-toggle-versions" id="btnToggleVersions" onclick="toggleVersionPanel()" title="查看版本历史">📋 版本记录</button>
+      <span class="version-count" id="versionCount"></span>
+    </div>
+    <div class="resume-wrapper" id="resume">
+      <div class="resume-header">
+        <div class="header-left">
+          <h1 contenteditable="true">陈伊洋</h1>
+          <div class="subtitle" contenteditable="true">买手/供应链实习生 · 27届 · 可实习6个月 · 每周5天</div>
+          <div class="contact-row">
+            <span>📞 <span contenteditable="true">198-4255-4418</span></span>
+            <span>📧 <span contenteditable="true">chengyiyang2023@outlook.com</span></span>
+            <span>📍 <span contenteditable="true">广州</span></span>
+            <span>🎂 <span contenteditable="true">2004.04</span></span>
+          </div>
+        </div>
+        <div class="photo-area" id="photoArea">
+          <div class="photo-container" id="photoContainer" onclick="document.getElementById('photoInput').click()">
+            <img id="photoImg" style="display:none" alt="证件照">
+            <div class="photo-placeholder" id="photoPlaceholder">证件照<br>点击上传</div>
+          </div>
+          <div class="photo-actions" id="photoActions" style="display:none">
+            <button onclick="event.stopPropagation(); document.getElementById('photoInput').click()">更换</button>
+            <button onclick="event.stopPropagation(); openCropModal()">裁切</button>
+            <button class="danger" onclick="event.stopPropagation(); removePhoto()">删除</button>
+          </div>
+          <input type="file" id="photoInput" accept="image/*" onchange="handlePhotoUpload(event)">
+        </div>
+      </div>
+
+      <div class="resume-body">
+        <!-- 教育经历 -->
+        <div class="section">
+          <div class="section-title"><span class="section-dot"></span>教育经历</div>
+          <div class="entry">
+            <div class="entry-header">
+              <span><span class="entry-school" contenteditable="true">广东金融学院</span><span class="entry-role" contenteditable="true">物流管理 · 本科</span></span>
+              <span class="entry-date" contenteditable="true">2023.09 - 2027.06</span>
+            </div>
+            <div class="entry-sub" contenteditable="true">GPA 3.71/4.0（专业 top 5%） | 国家励志奖学金 · 校级二等奖学金 · 优秀团干</div>
+            <div class="entry-detail">
+              <div contenteditable="true"><strong>主修：</strong>市场营销、采购管理、供应链管理、金蝶ERP实务、财务管理、企业生产运作</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 实习经历 -->
+        <div class="section">
+          <div class="section-title"><span class="section-dot"></span>实习经历</div>
+          <div class="entry">
+            <div class="entry-header">
+              <span><span class="entry-company" contenteditable="true">唯品会（中国）有限公司</span><span class="entry-role" contenteditable="true">全球战略业务部 · 商品采买运营实习生</span></span>
+              <span class="entry-date" contenteditable="true">2026.06 - 至今</span>
+            </div>
+            <div class="entry-detail"><ul>
+              <li contenteditable="true"><strong>品类采买与定价：</strong>搭建"品牌—品类—价格"三维选品框架，对标竞品价格与成本结构，覆盖美妆、居家、男女装等8大品类，从24,429个SKU中精选1,741个采买，覆盖100+品牌，毛利稳定在35%-40%。</li>
+              <li contenteditable="true"><strong>商品企划分析：</strong>搭建门店-品类-货盘多维BI看板，按周度追踪45+门店、8大部类、600+SKC的销量/销额/店存/周转指标，优化调、配、补策略，品类动销率提升6%。</li>
+              <li contenteditable="true"><strong>库存测算：</strong>结合销售目标测算采购OTB，误差控制在5%以内；针对仓容饱和超130%的品类，落地跨区域退供与调拨。</li>
+            </ul></div>
+          </div>
+          <div class="entry">
+            <div class="entry-header">
+              <span><span class="entry-company" contenteditable="true">广东南方乡投产业发展有限公司</span><span class="entry-role" contenteditable="true">供应链部门 · 供应链实习生</span></span>
+              <span class="entry-date" contenteditable="true">2025.06 - 2026.08</span>
+            </div>
+            <div class="entry-detail"><ul>
+              <li contenteditable="true"><strong>跟单与库存周转：</strong>对接4家供应商，完成询盘→报价→下单→跟单全流程；跟进200+SKU存货周转，处理物流异常并协调仓库调拨；定期监测动销品/平销品/滞销品，推动库存优化。</li>
+              <li contenteditable="true"><strong>销售运营：</strong>用Excel/PowerBI搭建数据看板，分析门店周环比与客单价，精准识别10个爆品，销量环比提升5%；用AI工具优化商品图文，提升点击率与曝光量。</li>
+            </ul></div>
+          </div>
+        </div>
+
+        <!-- 校园经历 -->
+        <div class="section">
+          <div class="section-title"><span class="section-dot"></span>校园经历</div>
+          <div class="entry">
+            <div class="entry-header">
+              <span><span class="entry-school" contenteditable="true">校青年成长服务中心</span><span class="entry-role" contenteditable="true">宣传部 · 部长</span></span>
+              <span class="entry-date" contenteditable="true">2023.10 - 2025.09</span>
+            </div>
+            <div class="entry-detail"><ul>
+              <li contenteditable="true">管理12人团队，策划5场大型活动，协调场地物资，活动参与率达95%。</li>
+              <li contenteditable="true">主导设计组织吉祥物IP形象，用PS设计活动海报与推文排版。</li>
+            </ul></div>
+          </div>
+        </div>
+
+        <!-- 项目经历 -->
+        <div class="section">
+          <div class="section-title"><span class="section-dot"></span>项目经历</div>
+          <div class="entry">
+            <div class="entry-header">
+              <span><span class="entry-company" contenteditable="true">全国跨境电商数字化运营技能大赛</span><span class="entry-role" contenteditable="true">核心成员</span></span>
+              <span class="entry-date" contenteditable="true">2026.04 - 2026.06</span>
+            </div>
+            <div class="entry-detail"><ul>
+              <li contenteditable="true"><strong>电商运营：</strong>速卖通模拟运营33款商品，完成主图/标题/详情页本地化优化，制定阶梯定价与满减促销策略，打造15款爆品，营销ROI提升15%；拓展B2B批发，批发订单占比达40%，全国本科组前30%。</li>
+              <li contenteditable="true"><strong>物流策略：</strong>对比多类物流渠道成本与时效，为33个产品逐一匹配最优方案，实现零丢单、100%时效履约。</li>
+            </ul></div>
+          </div>
+          <div class="entry">
+            <div class="entry-header">
+              <span><span class="entry-company" contenteditable="true">全国大学生创业综合模拟大赛</span><span class="entry-role" contenteditable="true">项目负责人</span></span>
+              <span class="entry-date" contenteditable="true">2025.04 - 2025.06</span>
+            </div>
+            <div class="entry-detail"><ul>
+              <li contenteditable="true"><strong>团队统筹：</strong>分工生产、研发、物流、财务、市场5大板块；协调产能冲突、成本超支、订单延误等核心问题，主导整体运营策略。</li>
+              <li contenteditable="true"><strong>供应链优化：</strong>主导产品研发投入决策，按用户需求开发4款产品；优化仓库结构，库存持有成本降10%，资金周转周期缩短5天。</li>
+            </ul></div>
+          </div>
+          <div class="entry">
+            <div class="entry-header">
+              <span><span class="entry-company" contenteditable="true">全国大学生市场调查与分析大赛</span><span class="entry-role" contenteditable="true">核心成员</span></span>
+              <span class="entry-date" contenteditable="true">2024.12 - 2025.03</span>
+            </div>
+            <div class="entry-detail"><ul>
+              <li contenteditable="true">研究广州蔬果茶饮市场消费者需求与偏好因素；用SPSS/Stata处理数据，Python爬虫抓取网络数据并做情感分析；K-means划分用户画像，Amos构建结构方程模型，为茶饮企业提出6条营销建议与冷链物流优化方案。</li>
+            </ul></div>
+          </div>
+        </div>
+
+        <!-- 竞赛奖项 -->
+        <div class="section">
+          <div class="section-title"><span class="section-dot"></span>竞赛奖项</div>
+          <div class="entry-detail" style="padding-left:0;border-left:none;">
+            <div contenteditable="true">
+              · 第十五届"挑战杯"广东省大学生创业计划竞赛 <strong>省赛金奖</strong><br>
+              · 市场调研大赛 <strong>一等奖</strong> &nbsp;|&nbsp; 创业模拟大赛 <strong>一等奖</strong><br>
+              · 数字贸易技能大赛-跨境电商模拟 <strong>全国三等奖</strong><br>
+              · 数学建模 <strong>优胜奖</strong> &nbsp;|&nbsp; 三下乡 <strong>优秀个人</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- 技能/证书 -->
+        <div class="section">
+          <div class="section-title"><span class="section-dot"></span>技能 / 证书</div>
+          <div class="skills-block">
+            <div class="skill-line" contenteditable="true"><strong>技能：</strong>Excel（Vlookup/Xlookup/Sumifs/数据透视表）、PowerBI、PS（海报/推文设计）、AI工具（搭建自动化工作流，数据处理效率提升数倍）</div>
+            <div class="skill-line" contenteditable="true"><strong>证书：</strong>初级会计、银行从业资格证、计算机二级、英语四级</div>
+            <div class="skill-line" contenteditable="true"><strong>兴趣：</strong>海报设计（PS+手绘IP）、摄影（构图与修图）</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Version History Panel -->
+    <div class="version-panel" id="versionPanel">
+      <div class="version-panel-header">
+        📋 版本记录
+        <span style="font-size:11px;color:#999;font-weight:400;" id="versionPanelCount"></span>
+      </div>
+      <div class="version-list" id="versionList"></div>
+    </div>
+  </div>
+
+  <!-- ========== MATERIAL PANEL ========== -->
+  <div class="content-panel" id="panel-material">
+    <!-- Work Log Upload -->
+    <div class="panel-card">
+      <div class="panel-card-header">📝 工作内容录入</div>
+      <div class="worklog-section">
+        <textarea class="worklog-textarea" id="worklogInput" placeholder="在此粘贴每日/每周的工作内容，系统会自动解析并总结为素材卡片…
+
+💡 建议格式：
+· 直接粘贴工作笔记、日报、周报内容
+· 按条目列出具体工作事项效果更佳
+· 包含关键数据（如SKU数量、百分比等）会被优先识别"></textarea>
+        <div class="worklog-toolbar">
+          <button class="btn-parse" id="btnParse" onclick="parseWorkLog()">🔍 解析并总结</button>
+          <span class="worklog-hint">解析后预览确认，再添加到素材库</span>
+        </div>
+        <div class="worklog-preview" id="worklogPreview">
+          <h4>📋 解析预览 — 确认并编辑后添加到素材库</h4>
+          <div id="worklogPreviewContent"></div>
+          <div class="preview-actions">
+            <button class="btn-discard" onclick="discardPreview()">丢弃</button>
+            <button class="btn-add-lib" onclick="addToLibrary()">✓ 添加到素材库</button>
+          </div>
+        </div>
+        <div class="worklog-history" id="worklogHistory"></div>
+      </div>
+    </div>
+
+    <!-- JD Analysis -->
+    <div class="panel-card">
+      <div class="panel-card-header">🔍 JD 匹配分析</div>
+      <div class="jd-section">
+        <textarea class="jd-textarea" id="jdInput" placeholder="粘贴岗位JD，自动识别关键词并高亮匹配素材…"></textarea>
+        <div style="display:flex;align-items:center;">
+          <button class="btn-analyze" id="btnAnalyze" onclick="analyzeJD()">分析并匹配</button>
+          <span class="jd-hint">匹配结果会高亮素材卡片并标注相关性</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Material Cards -->
+    <div class="panel-card">
+      <div class="panel-card-header">📦 实习素材库</div>
+      <div class="mat-toolbar">
+        <input class="mat-search" type="text" id="matSearch" placeholder="搜索关键词…" oninput="filterMaterials()">
+        <div class="mat-filter-group" id="matFilterGroup"></div>
+        <span class="mat-stats" id="matStats"></span>
+      </div>
+      <div class="mat-grid" id="matGrid"></div>
+    </div>
+  </div>
+
+  <!-- ========== TRACKER PANEL ========== -->
+  <div class="content-panel" id="panel-tracker">
+    <div class="panel-card">
+      <div class="panel-card-header">📋 秋招投递进度</div>
+      <div style="padding:16px 20px;">
+        <div class="tracker-toolbar">
+          <button onclick="addJobRow()">+ 新增记录</button>
+          <button class="btn-csv" onclick="exportJobCSV()">📊 导出CSV</button>
+          <div class="tracker-stats">
+            <span>总计：<span class="stat-num" id="statTotal">0</span></span>
+            <span>进行中：<span class="stat-num" id="statActive">0</span></span>
+            <span>Offer：<span class="stat-num" id="statOffer">0</span></span>
+          </div>
+        </div>
+        <div class="job-table-wrap">
+          <table class="job-table" id="jobTable">
+            <thead>
+              <tr>
+                <th style="width:28px">#</th>
+                <th style="min-width:110px">公司</th>
+                <th style="min-width:120px">岗位</th>
+                <th style="min-width:70px">行业</th>
+                <th style="min-width:80px">投递日期</th>
+                <th style="min-width:80px">进度</th>
+                <th style="min-width:90px">渠道</th>
+                <th style="min-width:140px">备注</th>
+                <th style="width:40px"></th>
+              </tr>
+            </thead>
+            <tbody id="jobTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== AUTUMN RECRUITMENT LINKS PANEL ========== -->
+  <div class="content-panel" id="panel-links">
+    <!-- Quick Links Management -->
+    <div class="panel-card">
+      <div class="panel-card-header">🔗 秋招链接导航</div>
+      <div class="links-toolbar" style="padding:14px 20px;border-bottom:1px solid #f0f2f5;">
+        <button class="btn-link-add" onclick="toggleLinkForm()">+ 添加链接</button>
+        <div class="link-stats">
+          <span>总计：<span class="stat-num" id="linkStatTotal">0</span></span>
+          <span>待投递：<span class="stat-num" id="linkStatOpen">0</span></span>
+          <span>已投递：<span class="stat-num" id="linkStatApplied">0</span></span>
+        </div>
+      </div>
+      <!-- Add/Edit Link Form -->
+      <div class="link-form-section" id="linkFormSection">
+        <div class="link-form-row">
+          <input type="text" id="linkCompany" placeholder="公司名称（必填）" style="flex:2">
+          <input type="text" id="linkPosition" placeholder="岗位名称（必填）" style="flex:3">
+        </div>
+        <div class="link-form-row">
+          <input type="text" id="linkUrl" placeholder="投递链接 URL" class="full-width">
+        </div>
+        <div class="link-form-row">
+          <select id="linkStatus">
+            <option value="urgent" selected>🔴 即将截止</option>
+            <option value="following">🟡 持续关注</option>
+            <option value="applied">🔵 已投递</option>
+            <option value="closed">⚪ 已截止</option>
+          </select>
+          <input type="text" id="linkDeadline" placeholder="截止日期（如：2026-09-30）">
+          <input type="text" id="linkIndustry" placeholder="行业/方向（如：电商、零售）">
+        </div>
+        <div class="link-form-row">
+          <input type="text" id="linkTags" placeholder="标签（逗号分隔，如：买手,供应链,广州）" style="flex:2">
+        </div>
+        <div class="link-form-row">
+          <textarea id="linkNotes" placeholder="备注（如：内推码、面试重点、薪资范围等）" style="width:100%;min-height:60px;border:1px solid #e0e3e8;border-radius:6px;padding:8px 12px;font-size:12px;font-family:inherit;resize:vertical;outline:none;"></textarea>
+        </div>
+        <div class="link-form-actions">
+          <input type="hidden" id="linkEditId">
+          <button class="btn-link-cancel" onclick="toggleLinkForm(false)">取消</button>
+          <button class="btn-link-save" onclick="saveLink()">💾 保存链接</button>
+        </div>
+      </div>
+      <!-- Filter Bar -->
+      <div class="link-filter-bar">
+        <input class="link-search" type="text" id="linkSearch" placeholder="搜索公司/岗位/标签…" oninput="renderLinkCards()">
+        <button class="filter-chip act" data-status="all" onclick="filterLinks('all', this)">全部</button>
+        <button class="filter-chip" data-status="urgent" onclick="filterLinks('urgent', this)">🔴 即将截止</button>
+        <button class="filter-chip" data-status="following" onclick="filterLinks('following', this)">🟡 关注中</button>
+        <button class="filter-chip" data-status="applied" onclick="filterLinks('applied', this)">🔵 已投递</button>
+        <button class="filter-chip" data-status="closed" onclick="filterLinks('closed', this)">⚪ 已截止</button>
+      </div>
+      <!-- Link Cards -->
+      <div class="link-grid" id="linkGrid"></div>
+      <!-- Update Log -->
+      <div class="link-update-panel" id="linkUpdatePanel">
+        <h4>📝 更新记录</h4>
+        <div id="linkUpdateList"></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Photo Crop Modal -->
+<div class="modal-overlay" id="cropModal" style="display:none">
+  <div class="modal">
+    <h3>编辑证件照</h3>
+    <div class="crop-container" id="cropContainer"><canvas id="cropCanvas"></canvas></div>
+    <div class="crop-controls">
+      <label>缩放：</label>
+      <input type="range" id="zoomSlider" min="0.5" max="3" step="0.01" value="1">
+      <span id="zoomValue">100%</span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeCropModal()">取消</button>
+      <button class="btn-primary" onclick="applyCrop()">应用</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== PANEL SWITCHING ====================
+function switchPanel(panelId, navEl) {
+  // Update nav
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  navEl.classList.add('active');
+
+  // Show panel
+  document.querySelectorAll('.content-panel').forEach(el => el.classList.remove('active'));
+  document.getElementById('panel-' + panelId).classList.add('active');
+
+  // Re-render if needed
+  if (panelId === 'material') {
+    renderFilterChips();
+    renderMaterialCards();
+    renderWorkLogHistory();
+  }
+  if (panelId === 'tracker') {
+    renderJobTable();
+  }
+  if (panelId === 'links') {
+    renderLinkCards();
+    renderLinkUpdates();
+  }
+}
+
+// ==================== PHOTO MANAGEMENT ====================
+let photoDataUrl = null, originalPhotoDataUrl = null;
+let cropImage = null, cropScale = 1;
+let cropOffsetX = 0, cropOffsetY = 0;
+let isDragging = false, dragStartX = 0, dragStartY = 0, dragStartOffsetX = 0, dragStartOffsetY = 0;
+
+function handlePhotoUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    originalPhotoDataUrl = e.target.result;
+    const img = new Image();
+    img.onload = function() {
+      cropImage = img; cropScale = 1;
+      resetCropToDefault(); renderPhotoPreview(); showPhoto();
+    };
+    img.src = originalPhotoDataUrl;
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+function resetCropToDefault() {
+  const c = document.getElementById('cropContainer');
+  cropScale = Math.min(c.clientWidth / cropImage.width, c.clientHeight / cropImage.height, 1.5);
+  cropOffsetX = 0; cropOffsetY = 0;
+}
+function renderPhotoPreview() {
+  const img = document.getElementById('photoImg');
+  if (photoDataUrl) {
+    img.src = photoDataUrl; img.style.display = 'block';
+    document.getElementById('photoPlaceholder').style.display = 'none';
+    document.getElementById('photoContainer').classList.add('has-photo');
+    document.getElementById('photoActions').style.display = 'flex';
+  }
+}
+function showPhoto() {
+  if (!cropImage) return;
+  const w = cropImage.width, h = cropImage.height;
+  const cropW = Math.min(w, h * 0.77), cropH = cropW / 0.77;
+  const sx = (w - cropW) / 2, sy = Math.max(0, (h - cropH) / 2);
+  const canvas = document.createElement('canvas');
+  canvas.width = 300; canvas.height = 390;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(cropImage, sx, sy, cropW, cropH, 0, 0, canvas.width, canvas.height);
+  photoDataUrl = canvas.toDataURL('image/jpeg', 0.92);
+  renderPhotoPreview();
+}
+function removePhoto() {
+  photoDataUrl = null; originalPhotoDataUrl = null; cropImage = null;
+  document.getElementById('photoImg').style.display = 'none';
+  document.getElementById('photoPlaceholder').style.display = '';
+  document.getElementById('photoContainer').classList.remove('has-photo');
+  document.getElementById('photoActions').style.display = 'none';
+}
+function openCropModal() {
+  if (!cropImage) return;
+  document.getElementById('cropModal').style.display = 'flex';
+  document.getElementById('zoomSlider').value = cropScale;
+  document.getElementById('zoomValue').textContent = Math.round(cropScale * 100) + '%';
+  cropOffsetX = 0; cropOffsetY = 0;
+  requestAnimationFrame(() => drawCropCanvas());
+}
+function closeCropModal() { document.getElementById('cropModal').style.display = 'none'; }
+function drawCropCanvas() {
+  const container = document.getElementById('cropContainer');
+  const canvas = document.getElementById('cropCanvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = container.clientWidth; canvas.height = container.clientHeight;
+  ctx.fillStyle = '#222'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const imgW = cropImage.width * cropScale, imgH = cropImage.height * cropScale;
+  const imgX = (canvas.width - imgW) / 2 + cropOffsetX, imgY = (canvas.height - imgH) / 2 + cropOffsetY;
+  ctx.drawImage(cropImage, imgX, imgY, imgW, imgH);
+  const cropW = Math.min(canvas.width * 0.7, canvas.height * 0.77), cropH = cropW / 0.77;
+  const cx = (canvas.width - cropW) / 2, cy = (canvas.height - cropH) / 2;
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fillRect(0, 0, canvas.width, cy);
+  ctx.fillRect(0, cy + cropH, canvas.width, canvas.height - cy - cropH);
+  ctx.fillRect(0, cy, cx, cropH);
+  ctx.fillRect(cx + cropW, cy, canvas.width - cx - cropW, cropH);
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.strokeRect(cx, cy, cropW, cropH);
+  const markLen = 20; ctx.strokeStyle = '#1a56db'; ctx.lineWidth = 2;
+  [[cx, cy, 1, 1], [cx + cropW, cy, -1, 1], [cx, cy + cropH, 1, -1], [cx + cropW, cy + cropH, -1, -1]].forEach(([x, y, dx, dy]) => {
+    ctx.beginPath(); ctx.moveTo(x, y + dy * markLen); ctx.lineTo(x, y); ctx.lineTo(x + dx * markLen, y); ctx.stroke();
+  });
+}
+function applyCrop() {
+  const container = document.getElementById('cropContainer');
+  const cw = container.clientWidth, ch = container.clientHeight;
+  const cropW = Math.min(cw * 0.7, ch * 0.77), cropH = cropW / 0.77;
+  const ccx = (cw - cropW) / 2, ccy = (ch - cropH) / 2;
+  const imgW = cropImage.width * cropScale, imgH = cropImage.height * cropScale;
+  const imgX = (cw - imgW) / 2 + cropOffsetX, imgY = (ch - imgH) / 2 + cropOffsetY;
+  const sx = ((ccx - imgX) / imgW) * cropImage.width;
+  const sy = ((ccy - imgY) / imgH) * cropImage.height;
+  const sw = (cropW / imgW) * cropImage.width;
+  const sh = (cropH / imgH) * cropImage.height;
+  const sxc = Math.max(0, Math.min(cropImage.width - 1, sx));
+  const syc = Math.max(0, Math.min(cropImage.height - 1, sy));
+  const swc = Math.min(cropImage.width - sxc, sw);
+  const shc = Math.min(cropImage.height - syc, sh);
+  const outCanvas = document.createElement('canvas');
+  outCanvas.width = 300; outCanvas.height = 390;
+  const outCtx = outCanvas.getContext('2d');
+  outCtx.drawImage(cropImage, sxc, syc, swc, shc, 0, 0, outCanvas.width, outCanvas.height);
+  photoDataUrl = outCanvas.toDataURL('image/jpeg', 0.92);
+  renderPhotoPreview(); closeCropModal();
+}
+
+// Crop drag/zoom events
+document.getElementById('cropCanvas').addEventListener('mousedown', function(e) {
+  isDragging = true; dragStartX = e.clientX; dragStartY = e.clientY;
+  dragStartOffsetX = cropOffsetX; dragStartOffsetY = cropOffsetY;
+  this.style.cursor = 'grabbing';
+});
+window.addEventListener('mousemove', function(e) {
+  if (!isDragging) return;
+  cropOffsetX = dragStartOffsetX + (e.clientX - dragStartX);
+  cropOffsetY = dragStartOffsetY + (e.clientY - dragStartY);
+  drawCropCanvas();
+});
+window.addEventListener('mouseup', function() { isDragging = false; document.getElementById('cropCanvas').style.cursor = 'grab'; });
+document.getElementById('cropCanvas').addEventListener('touchstart', function(e) {
+  if (e.touches.length === 1) {
+    isDragging = true; dragStartX = e.touches[0].clientX; dragStartY = e.touches[0].clientY;
+    dragStartOffsetX = cropOffsetX; dragStartOffsetY = cropOffsetY;
+  }
+}, {passive: false});
+window.addEventListener('touchmove', function(e) {
+  if (!isDragging || e.touches.length !== 1) return;
+  cropOffsetX = dragStartOffsetX + (e.touches[0].clientX - dragStartX);
+  cropOffsetY = dragStartOffsetY + (e.touches[0].clientY - dragStartY);
+  drawCropCanvas();
+}, {passive: false});
+window.addEventListener('touchend', function() { isDragging = false; });
+document.getElementById('zoomSlider').addEventListener('input', function() {
+  cropScale = parseFloat(this.value);
+  document.getElementById('zoomValue').textContent = Math.round(cropScale * 100) + '%';
+  drawCropCanvas();
+});
+document.getElementById('cropCanvas').addEventListener('wheel', function(e) {
+  e.preventDefault();
+  const delta = e.deltaY > 0 ? -0.05 : 0.05;
+  cropScale = Math.max(0.5, Math.min(3, cropScale + delta));
+  document.getElementById('zoomSlider').value = cropScale;
+  document.getElementById('zoomValue').textContent = Math.round(cropScale * 100) + '%';
+  drawCropCanvas();
+});
+document.getElementById('cropModal').addEventListener('click', function(e) { if (e.target === this) closeCropModal(); });
+
+function exportPDF() { window.print(); }
+
+// ==================== RESUME VERSION MANAGER ====================
+let resumeVersions = [];
+let currentPreviewVersionId = null;
+let resumeChangedSinceSave = false;
+
+function loadResumeVersions() {
+  try {
+    const saved = localStorage.getItem('resume_versions');
+    if (saved) resumeVersions = JSON.parse(saved);
+  } catch(e) { resumeVersions = []; }
+}
+
+function saveResumeVersionsToStorage() {
+  // Keep max 30 versions
+  if (resumeVersions.length > 30) resumeVersions = resumeVersions.slice(0, 30);
+  localStorage.setItem('resume_versions', JSON.stringify(resumeVersions));
+}
+
+function saveResumeVersion() {
+  const resumeEl = document.getElementById('resume');
+  if (!resumeEl) return;
+
+  const html = resumeEl.outerHTML;
+  const photoImg = document.getElementById('photoImg');
+  const photoData = (photoImg && photoImg.style.display !== 'none') ? photoImg.src : null;
+
+  // Generate summary from resume name
+  const nameEl = resumeEl.querySelector('.header-left h1');
+  const summary = nameEl ? nameEl.textContent.trim() : '简历快照';
+
+  const version = {
+    id: 'v-' + Date.now(),
+    time: new Date().toISOString(),
+    html: html,
+    photoData: photoData,
+    summary: summary
+  };
+
+  resumeVersions.unshift(version);
+  saveResumeVersionsToStorage();
+  resumeChangedSinceSave = false;
+  updateVersionIndicator();
+  renderVersionList();
+  showToast('版本已保存 ✓');
+}
+
+function renderVersionList() {
+  const list = document.getElementById('versionList');
+  const countEl = document.getElementById('versionPanelCount');
+  if (!list) return;
+
+  if (countEl) countEl.textContent = `(${resumeVersions.length} 个版本)`;
+
+  if (!resumeVersions.length) {
+    list.innerHTML = '<div class="version-empty">暂无版本记录，点击「💾 保存版本」创建第一个快照</div>';
+    return;
+  }
+
+  list.innerHTML = resumeVersions.map((v, i) => {
+    const isCurrent = i === 0;
+    const isPreviewing = v.id === currentPreviewVersionId;
+    const timeStr = formatVersionTime(v.time);
+    let cls = 'version-item';
+    if (isCurrent && !currentPreviewVersionId) cls += ' current';
+    if (isPreviewing) cls += ' previewing';
+
+    return `
+      <div class="${cls}">
+        <span class="v-time">${timeStr}</span>
+        <span class="v-summary" title="${escHtml(v.summary)}">${escHtml(v.summary)}</span>
+        <span class="v-actions">
+          ${isPreviewing
+            ? `<button class="v-btn-preview" onclick="exitPreview()">✕ 退出预览</button>`
+            : `<button class="v-btn-preview" onclick="previewVersion('${v.id}')">👁 预览</button>`
+          }
+          <button class="v-btn-restore" onclick="restoreVersion('${v.id}')">↩ 恢复</button>
+          <button class="v-btn-delete" onclick="deleteVersion('${v.id}')">🗑</button>
+        </span>
+      </div>
+    `;
+  }).join('');
+}
+
+function formatVersionTime(isoStr) {
+  const d = new Date(isoStr);
+  const now = new Date();
+  const diffMs = now - d;
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHr = Math.floor(diffMs / 3600000);
+
+  if (diffMin < 1) return '刚刚';
+  if (diffMin < 60) return `${diffMin} 分钟前`;
+  if (diffHr < 24) return `${diffHr} 小时前`;
+
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hour = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${month}-${day} ${hour}:${min}`;
+}
+
+function previewVersion(id) {
+  const version = resumeVersions.find(v => v.id === id);
+  if (!version) return;
+
+  currentPreviewVersionId = id;
+  const resumeEl = document.getElementById('resume');
+  if (resumeEl) {
+    resumeEl.outerHTML = version.html;
+    // Re-bind photo functionality
+    rebindPhotoAfterRestore();
+    // Make all contenteditable readonly during preview
+    document.querySelectorAll('#resume [contenteditable="true"]').forEach(el => {
+      el.setAttribute('contenteditable', 'false');
+      el.style.outline = 'none';
+      el.style.cursor = 'default';
+    });
+  }
+  renderVersionList();
+  showToast('正在预览历史版本（只读）');
+}
+
+function exitPreview() {
+  currentPreviewVersionId = null;
+  // Restore latest version (index 0) or original
+  if (resumeVersions.length > 0) {
+    restoreVersionContent(resumeVersions[0]);
+  }
+  // Re-enable editing
+  document.querySelectorAll('#resume [contenteditable]').forEach(el => {
+    el.setAttribute('contenteditable', 'true');
+    el.style.cursor = '';
+    el.style.outline = '';
+  });
+  renderVersionList();
+  showToast('已退出预览模式');
+}
+
+function restoreVersion(id) {
+  if (!confirm('确定要恢复到此版本吗？当前未保存的修改将丢失。')) return;
+
+  const version = resumeVersions.find(v => v.id === id);
+  if (!version) return;
+
+  currentPreviewVersionId = null;
+  restoreVersionContent(version);
+  // Re-enable editing
+  document.querySelectorAll('#resume [contenteditable]').forEach(el => {
+    el.setAttribute('contenteditable', 'true');
+    el.style.cursor = '';
+    el.style.outline = '';
+  });
+  resumeChangedSinceSave = false;
+  updateVersionIndicator();
+  renderVersionList();
+  showToast('已恢复到此版本 ✓');
+}
+
+function restoreVersionContent(version) {
+  const resumeEl = document.getElementById('resume');
+  if (!resumeEl) return;
+
+  // Create temporary container to parse the HTML
+  const temp = document.createElement('div');
+  temp.innerHTML = version.html;
+  const newResume = temp.firstElementChild;
+  if (newResume) {
+    resumeEl.outerHTML = version.html;
+    rebindPhotoAfterRestore();
+  }
+}
+
+function rebindPhotoAfterRestore() {
+  // Re-attach photo container click handler
+  const container = document.getElementById('photoContainer');
+  const input = document.getElementById('photoInput');
+  if (container && input) {
+    container.onclick = function() { input.click(); };
+  }
+  // Re-attach photo input change handler
+  if (input) {
+    input.onchange = function(event) { handlePhotoUpload(event); };
+  }
+  // Restore photo display
+  const photoImg = document.getElementById('photoImg');
+  const photoPlaceholder = document.getElementById('photoPlaceholder');
+  const photoActions = document.getElementById('photoActions');
+  if (photoImg && photoImg.src && photoImg.style.display !== 'none') {
+    if (photoPlaceholder) photoPlaceholder.style.display = 'none';
+    if (photoActions) photoActions.style.display = 'flex';
+    const container2 = document.getElementById('photoContainer');
+    if (container2) container2.classList.add('has-photo');
+  }
+}
+
+function deleteVersion(id) {
+  if (!confirm('确定删除此版本？')) return;
+  if (currentPreviewVersionId === id) exitPreview();
+  resumeVersions = resumeVersions.filter(v => v.id !== id);
+  saveResumeVersionsToStorage();
+  updateVersionIndicator();
+  renderVersionList();
+  showToast('版本已删除');
+}
+
+function toggleVersionPanel() {
+  const panel = document.getElementById('versionPanel');
+  if (!panel) return;
+  panel.classList.toggle('show');
+  if (panel.classList.contains('show')) {
+    renderVersionList();
+  }
+}
+
+function updateVersionIndicator() {
+  const countEl = document.getElementById('versionCount');
+  const btn = document.getElementById('btnToggleVersions');
+  if (countEl) countEl.textContent = resumeVersions.length ? `${resumeVersions.length} 个版本` : '';
+  if (btn) {
+    if (resumeChangedSinceSave) {
+      btn.classList.add('has-new');
+    } else {
+      btn.classList.remove('has-new');
+    }
+  }
+}
+
+// Track changes in resume
+function watchResumeChanges() {
+  const resumeEl = document.getElementById('resume');
+  if (!resumeEl) return;
+  const observer = new MutationObserver(() => {
+    if (!resumeChangedSinceSave) {
+      resumeChangedSinceSave = true;
+      updateVersionIndicator();
+    }
+  });
+  observer.observe(resumeEl, {
+    characterData: true,
+    childList: true,
+    subtree: true,
+    attributes: false
+  });
+}
+
+// ==================== MATERIAL LIBRARY ====================
+let materialData = [
+  {
+    id: 'buyer-01', category: '商品采买与选品', badge: 'buyer',
+    title: '三维选品框架搭建',
+    bullets: [
+      '搭建"品牌、品类、价格"三维选品框架',
+      '深度对标竞品价格、市场行情及品类成本结构',
+      '覆盖美妆、居家、男女装等 8 大品类',
+      '在 24,429 个 SKU 中精选 1,741 个采买，覆盖 100+ 品牌',
+      '熟悉各品类各品牌的价格带体系'
+    ],
+    keywords: ['选品', '品类', '品牌', '价格', 'SKU', '采买', '成本结构', '价格带', '美妆', '服饰', '框架']
+  },
+  {
+    id: 'buyer-02', category: '商品采买与选品', badge: 'buyer',
+    title: '线上 vs 线下选品逻辑差异',
+    bullets: [
+      '线下：基础轻薄款、刚需试穿款优先；厚外套/高价鞋履易滞销',
+      '线上：大件户外、高端鞋服、多色多尺码爆款更容易起量',
+      '线下受货架物理空间限制，SKU精简但尺码必须齐全',
+      '线上无陈列空间约束，海量SKU可分批上架',
+      '线下客群为周边固定人群，线上为全国海量分散用户'
+    ],
+    keywords: ['线上', '线下', '选品', '渠道', 'SKU', '陈列', '尺码', '客群', '试穿']
+  },
+  {
+    id: 'buyer-03', category: '商品采买与选品', badge: 'buyer',
+    title: '翻单决策逻辑（LOGO短袖案例）',
+    bullets: [
+      '根据周销量测算月需求，仅备3周安全库存适配换季节点',
+      '颜色分层：淘汰动销差色号，白色加量600件，其余500件',
+      '尺码拆分：剩余库存加权 + 单款单色单码实际销售占比双重测算',
+      '分区域铺货：翻单短袖不铺北方低温门店，优先供给华中/中南',
+      '设置二次补单预案：依托7天极速交付，缺货可快速响应'
+    ],
+    keywords: ['翻单', '订货', '尺码', '区域', '备货', '库存', '短期', '动销', '颜色', '铺货']
+  },
+  {
+    id: 'buyer-04', category: '商品采买与选品', badge: 'buyer',
+    title: '品类采买定价与毛利管控',
+    bullets: [
+      '逐SKU筛选价优款，毛利稳定在35%-40%',
+      '品类采买、比价、调价全流程管理',
+      '对标平台竞品价格与市场行情',
+      '区分渠道备货逻辑：线下减少厚外套/高价鞋，线上适度加量'
+    ],
+    keywords: ['采买', '定价', '毛利', '比价', '调价', '竞品', '价格', '渠道']
+  },
+  {
+    id: 'data-01', category: '数据分析与BI', badge: 'data',
+    title: 'BI多维分析看板搭建',
+    bullets: [
+      '运用BI工具搭建门店-品类-货盘多维分析看板',
+      '按周度跟进8大部类600+SKC销量、销额、店存、在途与周转指标',
+      '计算同比环比增幅与转化趋势',
+      '优化门店与货盘的调、配、补，实现品类动销率提升6%'
+    ],
+    keywords: ['BI', '看板', '门店', '品类', '货盘', '销量', '销额', '周转', '同比', '环比', '动销率']
+  },
+  {
+    id: 'data-02', category: '数据分析与BI', badge: 'data',
+    title: '促销活动数据复盘体系',
+    bullets: [
+      '按区域→门店→一级品类三维拆解，实现宏观到微观的问题定位',
+      '核心指标：销量、销额、毛利、毛利率、库存量、周转周数',
+      '区分常规活动与一口价两种促销模式，对比营收与盈利差异',
+      '指标组合分析：销量增速 vs 销额增速判断价格变化；销量+周转判断库存健康'
+    ],
+    keywords: ['促销', '活动', '一口价', '复盘', '指标', '销量', '毛利', '区域', '门店']
+  },
+  {
+    id: 'data-03', category: '数据分析与BI', badge: 'data',
+    title: 'Excel高级数据处理',
+    bullets: [
+      '熟练使用Vlookup、Xlookup、sumifs函数、数据透视表',
+      '用Excel/PowerBI制作数据看板',
+      '统计分析门店销售周环比、客单价周转',
+      '精准剖析爆点产品，销量环比提升5%',
+      '运用AI工具搭建工作流，重复性数据处理效率提升数倍'
+    ],
+    keywords: ['Excel', 'Vlookup', 'Xlookup', 'sumifs', '数据透视表', 'PowerBI', 'AI', '自动化']
+  },
+  {
+    id: 'inv-01', category: '库存管理与OTB', badge: 'inventory',
+    title: 'OTB采购限额测算',
+    bullets: [
+      'OTB = 计划销售额 + 折扣清仓额 + 目标期末库存 - 期初库存 - 在途货品',
+      '将采购量误差控制在5%以内，优化备货成本',
+      '分维度测算：按门店、品类、品牌分别计算OTB额度',
+      '联动调拨配货：所有补货不超过对应品类OTB上限',
+      '结合周转调整：高周转门店下调OTB，低周转上调'
+    ],
+    keywords: ['OTB', '采购', '预算', '限额', '库存', '测算', '误差', '备货', '配货']
+  },
+  {
+    id: 'inv-02', category: '库存管理与OTB', badge: 'inventory',
+    title: '周转周数管理与库存分层',
+    bullets: [
+      '周转周数 = 当前库存 ÷ 周均销量',
+      '建立分层阈值：<8周健康主推，8-15周预警加大曝光，>15周滞销清仓',
+      '基于仓容与库存饱和率识别风险',
+      '仓容饱和超130%品类，落地跨区域退供与调拨',
+      '店周转>4个月触发滞销预警，跟进打折促销、跨店调拨'
+    ],
+    keywords: ['周转', '周数', '库存', '分层', '滞销', '预警', '仓容', '饱和率', '退供', '调拨']
+  },
+  {
+    id: 'inv-03', category: '库存管理与OTB', badge: 'inventory',
+    title: 'SKC宽度与深度管控',
+    bullets: [
+      'SKC宽度：门店允许上架的款色种类上限（管"有多少款"）',
+      'SKC深度：每个款色单店的备货件数标准（管"每款有多少件"）',
+      'SKU：深度的件数拆到每个尺码（条码级别）',
+      '店容管控：全店所有商品总件数上限',
+      '非散货区有严格的陈列SKC宽度、深度硬性管控'
+    ],
+    keywords: ['SKC', 'SKU', '宽度', '深度', '陈列', '款色', '尺码', '店容', '备货']
+  },
+  {
+    id: 'inv-04', category: '库存管理与OTB', badge: 'inventory',
+    title: '库龄管理与滞销识别',
+    bullets: [
+      'RI库龄：商品从入库/到店到统计当天的存放天数',
+      '0-30天为新到店正常库存，31-90天需关注慢销款，90天以上呆滞库存',
+      '门店零售RI>14天不能下单，属于长尾款',
+      '按PO号做单批经营分析，追溯全链路库存表现',
+      '定期监测动销品/平销品/滞销品，拉动动销品销售与滞销品周转'
+    ],
+    keywords: ['库龄', 'RI', '滞销', 'PO号', '动销', '长尾', '呆滞', '追溯']
+  },
+  {
+    id: 'promo-01', category: '促销活动分析', badge: 'promo',
+    title: '一口价 vs 常规活动差异化运营',
+    bullets: [
+      '常规活动：门店利润营收主力，满减/组合优惠，折扣可控，保障毛利',
+      '一口价：强力度特价，定位清理滞销/高库存/过季货品',
+      '一口价毛利率更低，不能全域大规模铺开',
+      '定向投放：只给库存积压门店、滞销品类投放一口价',
+      '风险信号：一口价投入多但销量增速低→清仓效果差，需更换货品'
+    ],
+    keywords: ['一口价', '活动', '促销', '满减', '清仓', '毛利', '折扣', '滞销']
+  },
+  {
+    id: 'promo-02', category: '促销活动分析', badge: 'promo',
+    title: '指标组合分析逻辑（面试必背）',
+    bullets: [
+      '销量增速 > 销额增速 → 成交均价下滑，低价促销占比提升',
+      '销量增速 < 销额增速 → 高价商品卖得更好，品类结构优化',
+      '销量上涨+周转低 → 动销优秀，可以追加补货',
+      '销量下滑+周转高 → 严重滞销，优先安排清仓',
+      '销量平稳+周转持续走高 → 库存越积越多，逐步减少订货'
+    ],
+    keywords: ['指标', '分析', '销量', '销额', '周转', '毛利', '促销', '面试']
+  },
+  {
+    id: 'supply-01', category: '供应链管理', badge: 'supply',
+    title: '供应商管理与跟单',
+    bullets: [
+      '与4家供应商沟通，经询盘报价完成采购下单与跟单',
+      '跟进200+SKU存货周转及物流状态',
+      '解决物流状态异常订单并协助调拨仓库',
+      '区分自有品牌（面料研发、备料周期长）与公版LOGO款（小单快反、7天交付）'
+    ],
+    keywords: ['供应商', '跟单', '采购', '下单', '物流', 'SKU', '询盘', '报价']
+  },
+  {
+    id: 'supply-02', category: '供应链管理', badge: 'supply',
+    title: '小单快反与供应链分层',
+    bullets: [
+      'LOGO公版T恤：单色起订500件，7天极速交付，适合短期补量',
+      '自有品牌：单色起订1000件，侧重面料研发，备料/打版周期长',
+      '按品类分层供应链：基础款走快反，长线款深耕面料',
+      '分区域配货：第一批全国铺货，第二批北方低温区域不铺',
+      '首铺（人工）+ 补货（系统）的双轨分货模式'
+    ],
+    keywords: ['小单快反', '供应链', '起订量', '交付', '分区域', '铺货', '首铺', '补货']
+  },
+  {
+    id: 'supply-03', category: '供应链管理', badge: 'supply',
+    title: '库存周转与物流优化',
+    bullets: [
+      '跟进存货周转及物流状态，解决异常订单',
+      '定期监测仓库动销品、平销品、滞销品情况',
+      '降低库存积压风险，为库存优化提供依据',
+      '越库：货品到库/店不上货架，直接中转'
+    ],
+    keywords: ['周转', '物流', '仓库', '动销', '滞销', '积压', '越库']
+  },
+  {
+    id: 'plan-01', category: '商品企划', badge: 'plan',
+    title: '品类规划与季节切换',
+    bullets: [
+      '全国跨区域45+门店经营表现数据分析',
+      '区分季节品类切换：9月15日全国转秋，提前规划卫衣/长袖T/卫裤',
+      '建立货品优先级规则，避免多品类到货后门店资源冲突',
+      '规划配饰拓展：调研潮帽赛道（对标MLB/New Era），填补品类缺口',
+      '资源从夏季短袖全面转向秋冬核心品类'
+    ],
+    keywords: ['品类', '季节', '规划', '门店', '秋冬', '配饰', '优先级', '切换']
+  },
+  {
+    id: 'plan-02', category: '商品企划', badge: 'plan',
+    title: '门店货品调拨与配货策略',
+    bullets: [
+      '按款维度分货：供应商→仓→按款分配到各门店',
+      '内采全部调拨到一个仓再按款分配，外采按款分仓/店',
+      '基于单店单周销量实现精准配货',
+      '对表现好的门店加倍数配货',
+      '多渠道订货需整合全渠道数据，防止渠道间货品挤压'
+    ],
+    keywords: ['调拨', '配货', '分货', '门店', '渠道', '内采', '外采']
+  },
+  {
+    id: 'plan-03', category: '商品企划', badge: 'plan',
+    title: '自动化单店补货系统规划',
+    bullets: [
+      '参考优衣库逻辑：系统读取单店单款单色单码周销，自动生成补货量',
+      '短期先落地基础穿搭单品自动补货',
+      '长期整合全渠道订货逻辑',
+      '解决人工多维度测算工作量大、误差高的痛点',
+      '依赖系统能力加持，纯人工难以落地全维度自动测算'
+    ],
+    keywords: ['自动化', '补货', '系统', '单店', '数字化', '优衣库', 'AI']
+  },
+  {
+    id: 'interview-01', category: '面试话术', badge: 'interview',
+    title: 'STAR法则：LOGO短袖翻单复盘',
+    bullets: [
+      'S：首批3000件剩余库存仅1.5周，8月面临换季+交付延期风险',
+      'T：制定安全翻单方案，控制库存避免换季滞销，填补短期缺货缺口',
+      'A：保留5个畅销色、差异化定量、尺码加权拆分、分温区铺货、二次补单预案',
+      'R：库存风险可控（仅备3周），配货精准度提升，供应链灵活度拉满，明确数字化优化方向'
+    ],
+    keywords: ['STAR', '面试', '翻单', '复盘', '回答', '案例']
+  },
+  {
+    id: 'interview-02', category: '面试话术', badge: 'interview',
+    title: '促销数据分析项目面试问答',
+    bullets: [
+      'Q：怎么做的？→ 搭建周期性复盘，按大盘→区域→门店→品类四层拆解，对比上期识别增长/下滑',
+      'Q：周转周数怎么理解？→ 库存÷周均销量，数值越高滞销越严重，占用货架+资金，过季只能降价清仓',
+      'Q：活动vs一口价区别？→ 活动是利润主力（折扣可控），一口价是清滞销（毛利率低）',
+      'Q：发现问题+对策？→ 增长结构不均衡/品类分化/区域差距/库存周转>15周，对应4套方案'
+    ],
+    keywords: ['面试', '问答', '促销', '数据分析', '周转', '活动', '一口价']
+  },
+  {
+    id: 'interview-03', category: '面试话术', badge: 'interview',
+    title: '毛利与销量的权衡思路',
+    bullets: [
+      '库存健康时优先保障毛利，依靠常规活动主推畅销品',
+      '存在大量高周转滞销库存时，短期适度牺牲毛利清理积压',
+      '长期目标一定是两者平衡，依靠货品分层运营',
+      '不能长期单纯走低价换销量'
+    ],
+    keywords: ['毛利', '销量', '权衡', '面试', '决策', '利润']
+  }
+];
+
+const categories = [...new Set(materialData.map(m => m.category))];
+let activeCategory = null;
+let searchQuery = '';
+let jdKeywords = [];
+let materialSelections = {};
+
+function renderFilterChips() {
+  const group = document.getElementById('matFilterGroup');
+  if (!group) return;
+  group.innerHTML = `
+    <button class="mat-filter-chip ${activeCategory === null ? 'active' : ''}" onclick="setCategory(null)">全部</button>
+    ${categories.map(c => `
+      <button class="mat-filter-chip ${activeCategory === c ? 'active' : ''}" onclick="setCategory('${c.replace(/'/g, "\\'")}')">${c}</button>
+    `).join('')}
+  `;
+}
+
+function setCategory(cat) {
+  activeCategory = cat;
+  renderFilterChips();
+  renderMaterialCards();
+}
+
+function filterMaterials() {
+  const searchEl = document.getElementById('matSearch');
+  searchQuery = searchEl ? searchEl.value.toLowerCase() : '';
+  renderMaterialCards();
+}
+
+function analyzeJD() {
+  const jdText = document.getElementById('jdInput').value.trim();
+  if (!jdText) { showToast('请先粘贴JD内容'); return; }
+  jdKeywords = extractKeywords(jdText);
+  renderMaterialCards();
+  showToast(`已分析JD，提取 ${jdKeywords.length} 个关键词`);
+}
+
+function extractKeywords(text) {
+  const kwMap = {
+    '选品': ['选品', '选款', '选品框架'],
+    '采买': ['采买', '采购', '买手', 'buyer', 'merchandising'],
+    '品类': ['品类', '类目', 'category'],
+    '数据分析': ['数据分析', '数据', '分析', 'BI', '看板', 'excel', '报表'],
+    '库存': ['库存', 'inventory', '存货'],
+    'OTB': ['OTB', '采购预算', '采购计划'],
+    '周转': ['周转', '动销', 'turnover'],
+    '供应链': ['供应链', 'supply chain', '物流', '供应商'],
+    '促销': ['促销', '活动', 'promotion', '折扣', '满减'],
+    '毛利': ['毛利', '利润', '盈利', 'margin'],
+    '商品企划': ['商品企划', '企划', '规划', 'merchandise planning'],
+    '电商': ['电商', '线上', '平台', 'ecommerce'],
+    '线下': ['线下', '门店', '零售', 'retail', '实体'],
+    '定价': ['定价', '价格', 'pricing', '比价'],
+    'SKU': ['SKU', 'SKC', '款', '商品'],
+    '品牌': ['品牌', 'brand'],
+    '渠道': ['渠道', 'channel', '全渠道'],
+    '服装': ['服装', '服饰', '鞋', 'apparel'],
+    '零售': ['零售', 'retail'],
+    '运营': ['运营', 'operation'],
+    '面试': ['面试', 'STAR', '问答'],
+  };
+  const found = new Set();
+  const lower = text.toLowerCase();
+  for (const [, kws] of Object.entries(kwMap)) {
+    for (const kw of kws) {
+      if (lower.includes(kw.toLowerCase())) found.add(kw);
+    }
+  }
+  return [...found];
+}
+
+function calcRelevance(mat) {
+  if (!jdKeywords.length) return 0;
+  const allText = (mat.title + ' ' + mat.bullets.join(' ') + ' ' + mat.keywords.join(' ')).toLowerCase();
+  let score = 0;
+  for (const kw of jdKeywords) {
+    if (allText.includes(kw.toLowerCase())) score++;
+  }
+  return score;
+}
+
+function renderMaterialCards() {
+  const grid = document.getElementById('matGrid');
+  if (!grid) return;
+  let filtered = materialData;
+  if (activeCategory) filtered = filtered.filter(m => m.category === activeCategory);
+  if (searchQuery) {
+    filtered = filtered.filter(m => {
+      const txt = m.title + ' ' + m.bullets.join(' ') + ' ' + m.keywords.join(' ');
+      return txt.toLowerCase().includes(searchQuery);
+    });
+  }
+  if (jdKeywords.length) filtered = [...filtered].sort((a, b) => calcRelevance(b) - calcRelevance(a));
+
+  const statsEl = document.getElementById('matStats');
+  if (statsEl) statsEl.textContent = `共 ${filtered.length} 条` + (jdKeywords.length ? ' · 已匹配JD' : '');
+
+  grid.innerHTML = filtered.map(m => {
+    const rel = jdKeywords.length ? calcRelevance(m) : 0;
+    const isJDMatched = rel >= 2;
+    const isSelected = materialSelections[m.id];
+    return `
+      <div class="mat-card ${isSelected ? 'selected' : ''} ${m.custom ? 'custom' : ''}" id="card-${m.id}" style="${isJDMatched ? 'border-color:#81c784;background:#fafff9;' : ''}">
+        <div class="mat-card-header">
+          <span class="mat-card-title">${m.title}</span>
+          <span class="mat-card-badge badge-${m.badge}">${m.category}</span>
+          ${isJDMatched ? `<span class="relevance-score">匹配 ${rel}</span>` : ''}
+        </div>
+        <div class="mat-card-body">
+          <ul>${m.bullets.map(b => `<li>${b}</li>`).join('')}</ul>
+        </div>
+        <div class="mat-card-actions">
+          <button class="btn-copy" onclick="copyMaterial('${m.id}')">📋 复制</button>
+          <button class="btn-select ${isSelected ? 'selected' : ''}" onclick="toggleSelect('${m.id}')">
+            ${isSelected ? '✓ 已标记' : '☆ 标记'}
+          </button>
+          ${m.custom ? `<button class="btn-delete-mat" onclick="deleteCustomMaterial('${m.id}')" title="删除此条">🗑</button>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function copyMaterial(id) {
+  const m = materialData.find(x => x.id === id);
+  if (!m) return;
+  const text = `【${m.category}】${m.title}\n${m.bullets.map(b => '• ' + b).join('\n')}`;
+  navigator.clipboard.writeText(text).then(() => showToast('已复制到剪贴板')).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta); showToast('已复制到剪贴板');
+  });
+}
+
+function toggleSelect(id) {
+  materialSelections[id] = !materialSelections[id];
+  renderMaterialCards();
+}
+
+function showToast(msg) {
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2000);
+}
+
+// ==================== WORK LOG PARSING ====================
+let workLogPreviewData = null;
+
+const CATEGORY_BADGE_MAP = {
+  '商品采买与选品': 'buyer',
+  '数据分析与BI': 'data',
+  '库存管理与OTB': 'inventory',
+  '促销活动分析': 'promo',
+  '供应链管理': 'supply',
+  '商品企划': 'plan',
+  '面试话术': 'interview'
+};
+
+function detectCategory(text) {
+  const signals = {
+    '商品采买与选品': ['选品', '采买', '买手', 'SKU', '品牌', '价格带', '定价', '比价', '选款', '品类', '毛利', '毛利率'],
+    '数据分析与BI': ['数据', 'BI', '看板', '分析', 'Excel', 'Vlookup', '数据透视', '同比', '环比', '报表', '指标', '销量', '销额', 'PowerBI', '周报'],
+    '库存管理与OTB': ['库存', 'OTB', '周转', '仓容', '饱和', '滞销', '动销', '库龄', 'SKC', '退供', '调拨', '备货'],
+    '促销活动分析': ['促销', '活动', '一口价', '满减', '折扣', '清仓', '优惠'],
+    '供应链管理': ['供应', '物流', '供应商', '跟单', '询盘', '报价', '采购', '下单', '小单快反', '交付', '配货', '分货'],
+    '商品企划': ['企划', '规划', '季节', '品类', '门店', '铺货', '配饰', '秋冬', '春夏'],
+    '面试话术': ['面试', 'STAR', '问答', '回答', '话术'],
+  };
+  let bestCat = '商品采买与选品';
+  let bestScore = 0;
+  const lower = text.toLowerCase();
+  for (const [cat, kws] of Object.entries(signals)) {
+    let score = 0;
+    for (const kw of kws) {
+      if (lower.includes(kw.toLowerCase())) score++;
+    }
+    if (score > bestScore) { bestScore = score; bestCat = cat; }
+  }
+  return bestCat;
+}
+
+function extractTitle(text) {
+  const lines = text.split(/[\n\r]+/).filter(l => l.trim());
+  if (!lines.length) return '工作记录';
+  const first = lines[0].replace(/^[#\-\d\.\s]+/, '').trim();
+  if (first.length <= 25) return first;
+  return first.slice(0, 22) + '…';
+}
+
+function extractBullets(text) {
+  const lines = text.split(/[\n\r]+/).filter(l => l.trim());
+  const bullets = [];
+  for (let line of lines) {
+    line = line.replace(/^[#\-\d\.\s★●◆▶✓✅☑️⭐▪️]+/, '').trim();
+    if (!line || line.length < 4) continue;
+    if (line.length > 80) {
+      // Split long lines into sentences
+      const parts = line.split(/[。；;]/).filter(s => s.trim().length > 4);
+      bullets.push(...parts.map(s => s.trim() + (s.endsWith('）') || s.endsWith(')') ? '' : '')));
+    } else {
+      bullets.push(line);
+    }
+  }
+  // Limit to max 8 bullets, keep the longest ones
+  const sorted = bullets.sort((a, b) => b.length - a.length);
+  return sorted.slice(0, 8);
+}
+
+function extractKeywordsFromText(text) {
+  const kwPool = ['选品', '采买', 'SKU', '品类', '品牌', '价格', '成本', '毛利', '销售', '分析',
+    '数据', '库存', '周转', 'OTB', '看板', 'BI', 'Excel', '促销', '活动', '供应链', '物流',
+    '供应商', '跟单', '门店', '配货', '调拨', '补货', '动销', '滞销', '定价', '比价', '渠道',
+    '线上', '线下', '运营', '面试', '企划', '规划', '翻单', '备货', '交付', '小单快反', '一口价',
+    '仓容', '库龄', 'RI', 'SKC', '宽度', '深度', '采购', '自动化', 'AI', '数字化', '电商', '零售'];
+  const lower = text.toLowerCase();
+  const found = [];
+  for (const kw of kwPool) {
+    if (lower.includes(kw.toLowerCase())) found.push(kw);
+  }
+  return found.slice(0, 10);
+}
+
+function parseWorkLog() {
+  const text = document.getElementById('worklogInput').value.trim();
+  if (!text) { showToast('请先粘贴工作内容'); return; }
+
+  const category = detectCategory(text);
+  const title = extractTitle(text);
+  const bullets = extractBullets(text);
+  const keywords = extractKeywordsFromText(text);
+  const badge = CATEGORY_BADGE_MAP[category] || 'buyer';
+
+  if (bullets.length === 0) {
+    showToast('未能识别出有效内容，请按条目格式整理后重试');
+    return;
+  }
+
+  workLogPreviewData = { category, badge, title, bullets, keywords };
+  renderWorkLogPreview();
+
+  // Save work log to history
+  saveWorkLogHistory(text, workLogPreviewData);
+}
+
+function renderWorkLogPreview() {
+  if (!workLogPreviewData) return;
+  const preview = document.getElementById('worklogPreview');
+  const content = document.getElementById('worklogPreviewContent');
+  const d = workLogPreviewData;
+
+  content.innerHTML = `
+    <div class="preview-edit-row">
+      <label>标题</label>
+      <input type="text" id="previewTitle" value="${escHtml(d.title)}" onchange="updatePreviewField('title', this.value)">
+    </div>
+    <div class="preview-edit-row">
+      <label>分类</label>
+      <select id="previewCategory" onchange="updatePreviewCategory(this.value)">
+        ${Object.keys(CATEGORY_BADGE_MAP).map(c => `<option value="${c}" ${d.category === c ? 'selected' : ''}>${c}</option>`).join('')}
+      </select>
+    </div>
+    <div class="preview-card">
+      <span class="preview-title">${escHtml(d.title)}</span>
+      <span class="preview-badge badge-${d.badge}">${d.category}</span>
+      <ul class="preview-bullets">
+        ${d.bullets.map(b => `<li contenteditable="true" onblur="updatePreviewBullet(${d.bullets.indexOf(b)}, this.textContent)">${escHtml(b)}</li>`).join('')}
+      </ul>
+    </div>
+    <div class="preview-edit-row">
+      <label>关键词</label>
+      <input type="text" id="previewKeywords" value="${escHtml(d.keywords.join(', '))}" onchange="updatePreviewField('keywords', this.value.split(/[,，]\s*/))" placeholder="逗号分隔">
+    </div>
+  `;
+  preview.classList.add('show');
+  document.getElementById('worklogInput').style.display = 'none';
+}
+
+function updatePreviewField(field, value) {
+  if (!workLogPreviewData) return;
+  workLogPreviewData[field] = value;
+  // Re-render badge if category changed
+  if (field === 'category') {
+    workLogPreviewData.badge = CATEGORY_BADGE_MAP[value] || 'buyer';
+  }
+}
+
+function updatePreviewCategory(value) {
+  updatePreviewField('category', value);
+  workLogPreviewData.badge = CATEGORY_BADGE_MAP[value] || 'buyer';
+  renderWorkLogPreview();
+}
+
+function updatePreviewBullet(idx, text) {
+  if (!workLogPreviewData) return;
+  workLogPreviewData.bullets[idx] = text;
+}
+
+function discardPreview() {
+  workLogPreviewData = null;
+  document.getElementById('worklogPreview').classList.remove('show');
+  document.getElementById('worklogInput').style.display = '';
+  document.getElementById('worklogInput').value = '';
+}
+
+function addToLibrary() {
+  if (!workLogPreviewData) return;
+  const d = workLogPreviewData;
+  const newMat = {
+    id: 'custom-' + Date.now().toString(36),
+    category: d.category,
+    badge: d.badge,
+    title: d.title,
+    bullets: d.bullets.filter(b => b.trim()),
+    keywords: Array.isArray(d.keywords) ? d.keywords : d.keywords.split(/[,，]\s*/),
+    custom: true,
+    date: new Date().toISOString().slice(0, 10),
+    source: document.getElementById('worklogInput').value.trim().slice(0, 200)
+  };
+
+  materialData.unshift(newMat);
+  saveCustomMaterials();
+  renderFilterChips();
+  renderMaterialCards();
+  discardPreview();
+  document.getElementById('worklogInput').style.display = '';
+  showToast('已添加到素材库 ✓');
+}
+
+function deleteCustomMaterial(id) {
+  if (!confirm('确定删除这条自定义素材？')) return;
+  materialData = materialData.filter(m => m.id !== id);
+  saveCustomMaterials();
+  renderFilterChips();
+  renderMaterialCards();
+  showToast('已删除');
+}
+
+// ==================== WORK LOG HISTORY ====================
+function saveWorkLogHistory(rawText, parsed) {
+  try {
+    let history = JSON.parse(localStorage.getItem('worklog_history') || '[]');
+    history.unshift({
+      date: new Date().toISOString().slice(0, 10),
+      raw: rawText.slice(0, 500),
+      parsed: { title: parsed.title, category: parsed.category, bullets: parsed.bullets.slice(0, 3) }
+    });
+    if (history.length > 20) history = history.slice(0, 20);
+    localStorage.setItem('worklog_history', JSON.stringify(history));
+  } catch(e) {}
+}
+
+function renderWorkLogHistory() {
+  const el = document.getElementById('worklogHistory');
+  if (!el) return;
+  try {
+    const history = JSON.parse(localStorage.getItem('worklog_history') || '[]');
+    if (!history.length) { el.innerHTML = ''; return; }
+    el.innerHTML = `最近录入：${history.slice(0, 3).map((h, i) =>
+      `<span data-idx="${i}" title="${escHtml(h.raw)}" style="cursor:pointer;color:#1a56db;text-decoration:underline;">${h.date} ${escHtml(h.parsed.title)}</span>`
+    ).join(' &nbsp;|&nbsp; ')}`;
+    // Attach click handlers via JS to avoid inline HTML issues
+    el.querySelectorAll('span[data-idx]').forEach(span => {
+      const idx = parseInt(span.getAttribute('data-idx'));
+      span.addEventListener('click', () => loadWorkLogHistory(history[idx].raw));
+    });
+  } catch(e) {}
+}
+
+function loadWorkLogHistory(raw) {
+  document.getElementById('worklogInput').value = raw;
+  parseWorkLog();
+}
+
+// ==================== CUSTOM MATERIALS PERSISTENCE ====================
+function saveCustomMaterials() {
+  try {
+    const customs = materialData.filter(m => m.custom);
+    localStorage.setItem('custom_materials', JSON.stringify(customs));
+  } catch(e) {}
+}
+
+function loadCustomMaterials() {
+  try {
+    const saved = localStorage.getItem('custom_materials');
+    if (!saved) return;
+    const customs = JSON.parse(saved);
+    // Merge: remove old custom entries, then add saved ones
+    materialData = materialData.filter(m => !m.custom);
+    materialData = [...customs, ...materialData];
+  } catch(e) {}
+}
+
+// ==================== JOB TRACKER ====================
+const STATUS_OPTIONS = ['投递', '测评', '笔试', '一面', '二面', '三面', 'HR面', 'Offer', '拒信', '放弃', '入职'];
+let jobRows = [];
+
+function loadJobData() {
+  try {
+    const saved = localStorage.getItem('job_tracker_data');
+    if (saved) jobRows = JSON.parse(saved);
+  } catch(e) { jobRows = []; }
+}
+function saveJobData() { localStorage.setItem('job_tracker_data', JSON.stringify(jobRows)); }
+
+function addJobRow(data) {
+  const row = data || {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    company: '', position: '', industry: '', date: '', status: '投递', channel: '', notes: ''
+  };
+  jobRows.push(row);
+  saveJobData();
+  renderJobTable();
+}
+
+function deleteJobRow(id) {
+  jobRows = jobRows.filter(r => r.id !== id);
+  saveJobData();
+  renderJobTable();
+}
+
+function updateJobCell(id, field, value) {
+  const row = jobRows.find(r => r.id === id);
+  if (row) { row[field] = value; saveJobData(); updateStats(); }
+}
+
+function renderJobTable() {
+  const tbody = document.getElementById('jobTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = jobRows.map((r, i) => `
+    <tr>
+      <td style="color:#999;font-size:10px;">${i + 1}</td>
+      <td contenteditable="true" onblur="updateJobCell('${r.id}','company',this.textContent)">${escHtml(r.company)}</td>
+      <td contenteditable="true" onblur="updateJobCell('${r.id}','position',this.textContent)">${escHtml(r.position)}</td>
+      <td contenteditable="true" onblur="updateJobCell('${r.id}','industry',this.textContent)">${escHtml(r.industry)}</td>
+      <td contenteditable="true" onblur="updateJobCell('${r.id}','date',this.textContent)">${escHtml(r.date)}</td>
+      <td>
+        <select class="status-select" onchange="updateJobCell('${r.id}','status',this.value)">
+          ${STATUS_OPTIONS.map(s => `<option value="${s}" ${r.status === s ? 'selected' : ''}>${s}</option>`).join('')}
+        </select>
+      </td>
+      <td contenteditable="true" onblur="updateJobCell('${r.id}','channel',this.textContent)">${escHtml(r.channel)}</td>
+      <td contenteditable="true" onblur="updateJobCell('${r.id}','notes',this.textContent)">${escHtml(r.notes)}</td>
+      <td><button class="btn-delete" onclick="deleteJobRow('${r.id}')" title="删除">×</button></td>
+    </tr>
+  `).join('');
+  updateStats();
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function updateStats() {
+  const totalEl = document.getElementById('statTotal');
+  const activeEl = document.getElementById('statActive');
+  const offerEl = document.getElementById('statOffer');
+  if (totalEl) totalEl.textContent = jobRows.length;
+  if (activeEl) activeEl.textContent = jobRows.filter(r => !['Offer', '拒信', '放弃', '入职'].includes(r.status)).length;
+  if (offerEl) offerEl.textContent = jobRows.filter(r => r.status === 'Offer').length;
+}
+
+function exportJobCSV() {
+  const header = ['公司', '岗位', '行业', '投递日期', '进度', '渠道', '备注'];
+  const rows = jobRows.map(r => [r.company, r.position, r.industry, r.date, r.status, r.channel, r.notes]);
+  const csv = [header, ...rows].map(row => row.map(c => '"' + (c || '').replace(/"/g, '""') + '"').join(',')).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `秋招投递_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast('CSV已导出');
+}
+
+// ==================== AUTUMN RECRUITMENT LINKS ====================
+const LINK_STATUSES = [
+  { value: 'urgent', label: '🔴 即将截止', cls: 'link-status-urgent' },
+  { value: 'following', label: '🟡 关注中', cls: 'link-status-following' },
+  { value: 'applied', label: '🔵 已投递', cls: 'link-status-applied' },
+  { value: 'closed', label: '⚪ 已截止', cls: 'link-status-closed' }
+];
+let linkData = [];
+let linkFilterStatus = 'all';
+let linkUpdates = [];
+
+function loadLinkData() {
+  try {
+    const saved = localStorage.getItem('job_links_data');
+    if (saved) linkData = JSON.parse(saved);
+  } catch(e) { linkData = []; }
+  try {
+    const saved2 = localStorage.getItem('job_links_updates');
+    if (saved2) linkUpdates = JSON.parse(saved2);
+  } catch(e) { linkUpdates = []; }
+}
+function saveLinkData() {
+  localStorage.setItem('job_links_data', JSON.stringify(linkData));
+}
+function saveLinkUpdates() {
+  localStorage.setItem('job_links_updates', JSON.stringify(linkUpdates));
+}
+
+function addLinkUpdate(action, company, position) {
+  const now = new Date();
+  const dateStr = now.toISOString().slice(0, 10);
+  linkUpdates.unshift({
+    date: dateStr,
+    time: now.toISOString(),
+    action: action,   // '新增', '修改', '删除', '投递', '截止'
+    company: company,
+    position: position
+  });
+  if (linkUpdates.length > 50) linkUpdates = linkUpdates.slice(0, 50);
+  saveLinkUpdates();
+  renderLinkUpdates();
+}
+
+function toggleLinkForm(show, editData) {
+  const form = document.getElementById('linkFormSection');
+  if (show === false || (form.classList.contains('show') && !editData)) {
+    form.classList.remove('show');
+    document.getElementById('linkEditId').value = '';
+    document.getElementById('linkCompany').value = '';
+    document.getElementById('linkPosition').value = '';
+    document.getElementById('linkUrl').value = '';
+    document.getElementById('linkStatus').value = 'urgent';
+    document.getElementById('linkDeadline').value = '';
+    document.getElementById('linkIndustry').value = '';
+    document.getElementById('linkTags').value = '';
+    document.getElementById('linkNotes').value = '';
+    return;
+  }
+  form.classList.add('show');
+  document.getElementById('linkEditId').value = editData ? editData.id : '';
+  document.getElementById('linkCompany').value = editData ? editData.company : '';
+  document.getElementById('linkPosition').value = editData ? editData.position : '';
+  document.getElementById('linkUrl').value = editData ? (editData.url || '') : '';
+  document.getElementById('linkStatus').value = editData ? editData.status : 'urgent';
+  document.getElementById('linkDeadline').value = editData ? (editData.deadline || '') : '';
+  document.getElementById('linkIndustry').value = editData ? (editData.industry || '') : '';
+  document.getElementById('linkTags').value = editData ? (editData.tags || []).join(', ') : '';
+  document.getElementById('linkNotes').value = editData ? (editData.notes || '') : '';
+  form.scrollIntoView({ behavior: 'smooth' });
+}
+
+function saveLink() {
+  const company = document.getElementById('linkCompany').value.trim();
+  const position = document.getElementById('linkPosition').value.trim();
+  if (!company || !position) { showToast('请填写公司名称和岗位名称'); return; }
+
+  const editId = document.getElementById('linkEditId').value;
+  const linkObj = {
+    id: editId || 'link-' + Date.now().toString(36),
+    company: company,
+    position: position,
+    url: document.getElementById('linkUrl').value.trim(),
+    status: document.getElementById('linkStatus').value,
+    deadline: document.getElementById('linkDeadline').value.trim(),
+    industry: document.getElementById('linkIndustry').value.trim(),
+    tags: document.getElementById('linkTags').value.split(/[,，]/).map(s => s.trim()).filter(Boolean),
+    notes: document.getElementById('linkNotes').value.trim(),
+    updatedAt: new Date().toISOString()
+  };
+
+  if (editId) {
+    const idx = linkData.findIndex(l => l.id === editId);
+    if (idx >= 0) {
+      linkData[idx] = linkObj;
+      addLinkUpdate('修改', company, position);
+    }
+  } else {
+    linkData.unshift(linkObj);
+    addLinkUpdate('新增', company, position);
+  }
+
+  saveLinkData();
+  toggleLinkForm(false);
+  renderLinkCards();
+  renderLinkUpdates();
+  showToast(editId ? '链接已更新 ✓' : '链接已添加 ✓');
+}
+
+function quickStatusChange(id, newStatus) {
+  const link = linkData.find(l => l.id === id);
+  if (!link) return;
+  link.status = newStatus;
+  link.updatedAt = new Date().toISOString();
+  saveLinkData();
+  const actionMap = {
+    'applied': '投递',
+    'urgent': '标记紧急',
+    'following': '标记关注',
+    'closed': '标记截止'
+  };
+  addLinkUpdate(actionMap[newStatus] || '状态变更', link.company, link.position);
+  renderLinkCards();
+  renderLinkUpdates();
+  showToast('状态已更新');
+}
+
+function editLink(id) {
+  const link = linkData.find(l => l.id === id);
+  if (!link) return;
+  toggleLinkForm(true, link);
+}
+
+function deleteLink(id) {
+  const link = linkData.find(l => l.id === id);
+  if (!link || !confirm(`确定删除「${link.company} - ${link.position}」？`)) return;
+  addLinkUpdate('删除', link.company, link.position);
+  linkData = linkData.filter(l => l.id !== id);
+  saveLinkData();
+  renderLinkCards();
+  renderLinkUpdates();
+  showToast('链接已删除');
+}
+
+function filterLinks(status, chipEl) {
+  linkFilterStatus = status;
+  document.querySelectorAll('.link-filter-bar .filter-chip').forEach(c => c.classList.remove('act'));
+  if (chipEl) chipEl.classList.add('act');
+  renderLinkCards();
+}
+
+function renderLinkCards() {
+  const grid = document.getElementById('linkGrid');
+  if (!grid) return;
+
+  const search = (document.getElementById('linkSearch')?.value || '').toLowerCase();
+  let filtered = linkData;
+  if (linkFilterStatus !== 'all') filtered = filtered.filter(l => l.status === linkFilterStatus);
+  if (search) {
+    filtered = filtered.filter(l => {
+      const txt = [l.company, l.position, l.industry, ...(l.tags||[]), l.notes].join(' ').toLowerCase();
+      return txt.includes(search);
+    });
+  }
+
+  // Stats
+  document.getElementById('linkStatTotal').textContent = linkData.length;
+  document.getElementById('linkStatOpen').textContent = linkData.filter(l => l.status === 'urgent' || l.status === 'following').length;
+  document.getElementById('linkStatApplied').textContent = linkData.filter(l => l.status === 'applied').length;
+
+  if (!filtered.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:32px;color:#bbb;font-size:12px;">
+      暂无链接记录，点击「+ 添加链接」开始记录秋招投递链接
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map(l => {
+    const statusInfo = LINK_STATUSES.find(s => s.value === l.status) || LINK_STATUSES[0];
+    const deadlineDisplay = l.deadline ? `📅 ${l.deadline}` : '';
+    const industryDisplay = l.industry ? `🏷 ${l.industry}` : '';
+    const urlDomain = l.url ? (() => { try { return new URL(l.url).hostname; } catch(e) { return l.url; } })() : '';
+
+    return `
+      <div class="link-card ${l.status}">
+        <div class="link-card-top">
+          <span class="link-card-title">${escHtml(l.company)} · ${escHtml(l.position)}</span>
+          <span class="link-card-status ${statusInfo.cls}">${statusInfo.label}</span>
+        </div>
+        <div class="link-card-meta">
+          ${deadlineDisplay ? `<span>${deadlineDisplay}</span>` : ''}
+          ${industryDisplay ? `<span>${industryDisplay}</span>` : ''}
+          ${urlDomain ? `<span>🔗 <a href="${escHtml(l.url)}" target="_blank" style="color:#1a56db;text-decoration:underline;">直达链接</a></span>` : ''}
+        </div>
+        ${l.tags && l.tags.length ? `
+          <div class="link-card-tags">${l.tags.map(t => `<span class="tag">#${escHtml(t)}</span>`).join(' ')}</div>
+        ` : ''}
+        ${l.notes ? `
+          <div class="link-card-notes show">💬 ${escHtml(l.notes)}</div>
+        ` : ''}
+        <div class="link-card-actions">
+          ${l.url ? `<button class="btn-link-open" onclick="window.open('${escHtml(l.url).replace(/'/g, "\\'")}', '_blank')">🌐 打开链接</button>` : ''}
+          <button class="btn-link-follow" onclick="quickStatusChange('${l.id}','following')">关注</button>
+          <button class="btn-link-applied" onclick="quickStatusChange('${l.id}','applied')">✓ 已投递</button>
+          <button class="btn-link-open" onclick="editLink('${l.id}')">✏ 编辑</button>
+          <button class="btn-link-delete" onclick="deleteLink('${l.id}')">🗑</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderLinkUpdates() {
+  const el = document.getElementById('linkUpdateList');
+  if (!el) return;
+  if (!linkUpdates.length) {
+    el.innerHTML = '<div class="link-summary-empty">暂无更新记录，添加链接后将在此显示</div>';
+    return;
+  }
+  const actionColors = {
+    '新增': '#4caf50', '修改': '#1a56db', '删除': '#e53935',
+    '投递': '#1a56db', '标记紧急': '#e53935', '标记关注': '#f9a825', '标记截止': '#999'
+  };
+  el.innerHTML = linkUpdates.slice(0, 15).map(u => `
+    <div class="update-item">
+      <span class="update-date">${u.date}</span>
+      <span class="update-action" style="color:${actionColors[u.action] || '#666'}">[${u.action}]</span>
+      <span class="update-detail">${escHtml(u.company)} · ${escHtml(u.position)}</span>
+    </div>
+  `).join('');
+}
+
+function seedDefaultLinks() {
+  // Only seed if completely empty
+  if (linkData.length > 0) return;
+
+  const defaults = [
+    {
+      id: 'link-' + Date.now().toString(36) + '1',
+      company: '唯品会', position: '商品运营管培生（买手方向）', url: 'https://campus.vip.com/',
+      status: 'following', deadline: '2026-09-15', industry: '电商',
+      tags: ['买手', '电商', '广州', '零售'], notes: '27届可投，有内推码，优先广州场次', updatedAt: new Date().toISOString()
+    },
+    {
+      id: 'link-' + Date.now().toString(36) + '2',
+      company: '京东', position: '供应链管理培训生', url: 'https://campus.jd.com/',
+      status: 'urgent', deadline: '2026-08-30', industry: '电商/物流',
+      tags: ['供应链', '物流', '管培生', '全国'], notes: '京东物流板块，物流管理专业对口，需尽快准备面试', updatedAt: new Date().toISOString()
+    },
+    {
+      id: 'link-' + Date.now().toString(36) + '3',
+      company: '阿里巴巴', position: '淘天集团-商品运营专员', url: 'https://talent.alibaba.com/',
+      status: 'following', deadline: '2026-09-20', industry: '电商',
+      tags: ['电商', '运营', '杭州', '商品'], notes: '淘天集团岗位，偏重平台商品运营经验', updatedAt: new Date().toISOString()
+    },
+    {
+      id: 'link-' + Date.now().toString(36) + '4',
+      company: '拼多多', position: '商品运营管培生', url: 'https://careers.pinduoduo.com/',
+      status: 'following', deadline: '2026-10-15', industry: '电商',
+      tags: ['电商', '运营', '上海', '管培生'], notes: '成长快节奏，薪资有竞争力', updatedAt: new Date().toISOString()
+    },
+    {
+      id: 'link-' + Date.now().toString(36) + '5',
+      company: '美团', position: '供应链管理培训生', url: 'https://campus.meituan.com/',
+      status: 'following', deadline: '2026-10-01', industry: '互联网/O2O',
+      tags: ['供应链', 'O2O', '管培生', '北京/上海'], notes: '美团买菜/优选等新业务供应链建设', updatedAt: new Date().toISOString()
+    },
+    {
+      id: 'link-' + Date.now().toString(36) + '6',
+      company: 'SHEIN', position: '买手助理（服装品类）', url: 'https://www.sheingroup.com/careers/',
+      status: 'urgent', deadline: '2026-08-25', industry: '快时尚/跨境电商',
+      tags: ['买手', '服装', '跨境电商', '广州'], notes: '跨境电商快时尚，品类经验匹配度高，快速投递', updatedAt: new Date().toISOString()
+    },
+    {
+      id: 'link-' + Date.now().toString(36) + '7',
+      company: '网易严选', position: '商品开发与采购实习生', url: 'https://hr.163.com/',
+      status: 'following', deadline: '2026-09-10', industry: '电商/自营品牌',
+      tags: ['采购', '商品开发', '电商', '杭州'], notes: '自营品牌商品开发，采购方向，对口度高', updatedAt: new Date().toISOString()
+    },
+    {
+      id: 'link-' + Date.now().toString(36) + '8',
+      company: '字节跳动', position: '电商运营-抖音商城', url: 'https://jobs.bytedance.com/',
+      status: 'following', deadline: '2026-10-05', industry: '互联网/电商',
+      tags: ['电商', '抖音', '运营', '北京/上海'], notes: '抖音电商快速增长，商品运营机会多', updatedAt: new Date().toISOString()
+    },
+    {
+      id: 'link-' + Date.now().toString(36) + '9',
+      company: 'TEMU（拼多多海外）', position: '跨境电商运营', url: 'https://careers.pinduoduo.com/',
+      status: 'following', deadline: '2026-09-30', industry: '跨境电商',
+      tags: ['跨境电商', '运营', '广州/深圳', '出海'], notes: 'TEMU海外业务增长迅猛，跨境电商方向', updatedAt: new Date().toISOString()
+    },
+    {
+      id: 'link-' + Date.now().toString(36) + '10',
+      company: '快手', position: '电商运营专员', url: 'https://zhaopin.kuaishou.cn/',
+      status: 'following', deadline: '2026-10-10', industry: '互联网/电商',
+      tags: ['电商', '直播', '运营', '北京'], notes: '快手电商直播带货运营', updatedAt: new Date().toISOString()
+    },
+    {
+      id: 'link-' + Date.now().toString(36) + '11',
+      company: '名创优品', position: '商品企划管培生', url: 'https://www.miniso.cn/hr/',
+      status: 'following', deadline: '2026-09-25', industry: '零售/快消',
+      tags: ['零售', '商品企划', '广州', '快消'], notes: '线下零售商品企划方向，与唯品会实习经验互补', updatedAt: new Date().toISOString()
+    },
+    {
+      id: 'link-' + Date.now().toString(36) + '12',
+      company: '盒马（阿里巴巴）', position: '供应链与采购买手', url: 'https://talent.alibaba.com/',
+      status: 'following', deadline: '2026-09-15', industry: '新零售/生鲜',
+      tags: ['供应链', '采购', '生鲜', '新零售'], notes: '新零售供应链，采购买手方向', updatedAt: new Date().toISOString()
+    }
+  ];
+  linkData = defaults;
+  saveLinkData();
+  // Seed initial update log
+  defaults.forEach(d => {
+    linkUpdates.push({
+      date: new Date().toISOString().slice(0, 10),
+      time: d.updatedAt,
+      action: '新增',
+      company: d.company,
+      position: d.position
+    });
+  });
+  saveLinkUpdates();
+}
+
+// ==================== INIT ====================
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('cropCanvas').style.cursor = 'grab';
+  loadCustomMaterials();
+  renderFilterChips();
+  renderMaterialCards();
+  loadJobData();
+  renderJobTable();
+  renderWorkLogHistory();
+  loadResumeVersions();
+  updateVersionIndicator();
+  watchResumeChanges();
+  loadLinkData();
+  seedDefaultLinks();
+  renderLinkCards();
+  renderLinkUpdates();
+  if (jobRows.length === 0) {
+    addJobRow({ id: 'ex1', company: '示例：唯品会', position: '商品运营管培生', industry: '电商', date: '2026-08-15', status: '投递', channel: '官网', notes: '内推' });
+  }
+  // Add edit hints to section titles
+  document.querySelectorAll('.section-title').forEach(title => {
+    if (!title.querySelector('.edit-hint')) {
+      const hint = document.createElement('span');
+      hint.className = 'edit-hint';
+      hint.textContent = '点击编辑';
+      title.appendChild(hint);
+    }
+  });
+});
+</script>
+</body>
+</html>
